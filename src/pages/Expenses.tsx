@@ -5,9 +5,8 @@ import { DateRange } from "react-day-picker";
 import { ExpenseFilters } from "@/components/expense/ExpenseFilters";
 import { ExpenseTable } from "@/components/expense/ExpenseTable";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useExpenses, Expense } from "@/hooks/useExpenses"; // Import useExpenses and Expense interface
-import { Card } from "@/components/ui/card"; // Import Card for error display
+import { useExpenses } from "@/hooks/useExpenses";
+import { Card } from "@/components/ui/card";
 
 
 export default function Expenses() {
@@ -15,9 +14,15 @@ export default function Expenses() {
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("date-desc");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const { toast } = useToast();
 
-  const { data: expenses, isLoading, isError, error } = useExpenses(); // Fetch expenses
+  const { data: expenses, isLoading, isError, error } = useExpenses();
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setCategory("all");
+    setSortBy("date-desc");
+    setDateRange(undefined);
+  };
 
   const filteredExpenses = useMemo(() => {
     if (isLoading || isError || !expenses) {
@@ -70,28 +75,6 @@ export default function Expenses() {
   }, [search, category, sortBy, dateRange, expenses, isLoading, isError]);
 
   const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-  const handleClearFilters = () => {
-    setSearch("");
-    setCategory("all");
-    setSortBy("date-desc");
-    setDateRange(undefined);
-  };
-
-  const handleEdit = (expense: Expense) => {
-    toast({
-      title: "Edit expense",
-      description: `Editing: ${expense.description}`,
-    });
-  };
-
-  const handleDelete = (expense: Expense) => {
-    toast({
-      title: "Delete expense",
-      description: `Deleted: ${expense.description}`,
-      variant: "destructive",
-    });
-  };
 
   if (isLoading) {
     return (
@@ -158,8 +141,6 @@ export default function Expenses() {
       {/* Table */}
       <ExpenseTable
         expenses={filteredExpenses}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
       />
     </div>
   );

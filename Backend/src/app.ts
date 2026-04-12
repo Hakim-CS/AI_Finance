@@ -91,14 +91,14 @@ pool.connect()
     // Seed default categories if the table is empty
     try {
       const defaultCategories = [
-        { id: 'food',          name: 'Food & Dining',   icon: 'Utensils',      color: 'hsl(var(--chart-1))' },
-        { id: 'transport',     name: 'Transportation',  icon: 'Car',           color: 'hsl(var(--chart-2))' },
-        { id: 'shopping',      name: 'Shopping',        icon: 'ShoppingBag',   color: 'hsl(var(--chart-3))' },
-        { id: 'entertainment', name: 'Entertainment',   icon: 'Gamepad2',      color: 'hsl(var(--chart-4))' },
-        { id: 'utilities',     name: 'Utilities',       icon: 'Zap',           color: 'hsl(var(--chart-5))' },
-        { id: 'health',        name: 'Healthcare',      icon: 'Heart',         color: 'hsl(var(--chart-6))' },
-        { id: 'travel',        name: 'Travel',          icon: 'Plane',         color: 'hsl(var(--chart-8))' },
-        { id: 'other',         name: 'Other',           icon: 'MoreHorizontal',color: 'hsl(var(--chart-7))' },
+        { id: 'food', name: 'Food & Dining', icon: 'Utensils', color: 'hsl(var(--chart-1))' },
+        { id: 'transport', name: 'Transportation', icon: 'Car', color: 'hsl(var(--chart-2))' },
+        { id: 'shopping', name: 'Shopping', icon: 'ShoppingBag', color: 'hsl(var(--chart-3))' },
+        { id: 'entertainment', name: 'Entertainment', icon: 'Gamepad2', color: 'hsl(var(--chart-4))' },
+        { id: 'utilities', name: 'Utilities', icon: 'Zap', color: 'hsl(var(--chart-5))' },
+        { id: 'health', name: 'Healthcare', icon: 'Heart', color: 'hsl(var(--chart-6))' },
+        { id: 'travel', name: 'Travel', icon: 'Plane', color: 'hsl(var(--chart-8))' },
+        { id: 'other', name: 'Other', icon: 'MoreHorizontal', color: 'hsl(var(--chart-7))' },
       ];
       for (const cat of defaultCategories) {
         await client.query(
@@ -730,6 +730,8 @@ app.post('/expenses', protect, async (req, res) => {
       'INSERT INTO "Expense" (id, amount, "categoryId", description, date, notes, "userId", "groupId") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
       [id, amount, categoryId, description, date, notes, req.user?.id, groupId || null]
     );
+    // Invalidate the cached LSTM model for this user so the next forecast retrains
+    forecastModelCache.delete(req.user!.id);
     res.status(201).json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ message: 'Error adding expense', details: error.message });
@@ -939,8 +941,8 @@ app.get('/expenses/forecast', protect, async (req, res) => {
     let usedFallback = false;
 
     try {
-      // attempt LSTM/RNN
-      prediction = await predictWithLSTM(amounts);
+      // attempt LSTM/RNN — pass userId so the cache can be used
+      prediction = await predictWithLSTM(amounts, userId);
       if (prediction <= (lastAmount * 0.1) || isNaN(prediction)) throw new Error("AI Outlier");
     } catch (aiError) {
       // fallback  Linear Regression / Trend Growth
@@ -968,12 +970,20 @@ app.get('/expenses/forecast', protect, async (req, res) => {
   }
 });
 
+// --- LSTM MODEL CACHE ---
+// Stores one trained model per user. Invalidated whenever a new expense is saved.
+interface CachedModel {
+  model: tf.LayersModel;
+  trainedAt: Date;
+}
+const forecastModelCache = new Map<number, CachedModel>();
+
 // AI INSIGHTS & RECOMMENDATIONS
-async function predictWithLSTM(data: number[]) {
+async function predictWithLSTM(data: number[], userId?: number) {
   const n = data.length;
   if (n < 2) return data[0] || 0;
 
-  //  normalization with padding
+  // normalization with padding
   const max = Math.max(...data) * 1.5;
   const min = Math.min(...data) * 0.5;
   const range = max - min || 1;
@@ -990,6 +1000,19 @@ async function predictWithLSTM(data: number[]) {
   const tensorXs = tf.tensor(xs, [xs.length, 1, 1]) as tf.Tensor3D;
   const tensorYs = tf.tensor(ys, [ys.length, 1]) as tf.Tensor2D;
 
+  // --- CHECK CACHE ---
+  // If we have a valid cached model for this user, skip training entirely.
+  if (userId !== undefined && forecastModelCache.has(userId)) {
+    const cached = forecastModelCache.get(userId)!;
+    console.log(`[Forecast] Using cached model for user ${userId} (trained at ${cached.trainedAt.toLocaleTimeString()})`);
+    const lastVal = normalizedData[n - 1];
+    const input = tf.tensor3d([[[lastVal]]]);
+    const prediction = cached.model.predict(input) as tf.Tensor;
+    const predictedValue = (await prediction.data())[0];
+    tf.dispose([tensorXs, tensorYs, input, prediction]);
+    return (predictedValue * range) + min;
+  }
+
   // Dynamic Model Selection
   // LSTM needs more data to be stable. For < 5 months, SimpleRNN is safer.
   const model = tf.sequential();
@@ -1002,10 +1025,16 @@ async function predictWithLSTM(data: number[]) {
 
   model.compile({ optimizer: tf.train.adam(0.02), loss: 'meanSquaredError' });
 
-  //  Training
+  // Training
   await model.fit(tensorXs, tensorYs, { epochs: 250, verbose: 0 });
 
-  //  Predict
+  // Save to cache before predicting
+  if (userId !== undefined) {
+    forecastModelCache.set(userId, { model, trainedAt: new Date() });
+    console.log(`[Forecast] Model trained and cached for user ${userId}`);
+  }
+
+  // Predict
   const lastVal = normalizedData[n - 1];
   const input = tf.tensor3d([[[lastVal]]]);
   const prediction = model.predict(input) as tf.Tensor;

@@ -64,8 +64,7 @@ export default function Dashboard() {
 
   const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
 
-  const totalExpenses = expenses?.reduce((acc, e) => acc + e.amount, 0) || 0;
-  const totalBalance = monthlyIncome - totalExpenses; 
+  const totalBalance = monthlyIncome - monthlyExpensesTotal;
   const savingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100) : 0;
   // --- END REAL-TIME CALCULATIONS ---
 
