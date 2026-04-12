@@ -56,18 +56,18 @@ Aura Finance is a comprehensive personal finance management system that leverage
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/itkhld1/bsc-thesis-finance-tracker.git
-cd bsc-thesis-finance-tracker
+git clone https://github.com/hakim-cs/AI_Finance.git
+cd AI_Finance
 ```
 
 ### 2. Backend Setup
 Navigate to the backend directory and install dependencies:
 ```bash
-cd aura-finance-backend
+cd backend
 npm install
 ```
 
-Create a `.env` file in the `aura-finance-backend` directory with the following variables:
+Create a `.env` file in the `backend` directory with the following variables:
 ```env
 PORT=5001
 DATABASE_URL=postgresql://user:password@localhost:5432/aura_finance
@@ -88,7 +88,7 @@ To start the project, you need to run both the backend and the frontend.
 
 **Start the Backend:**
 ```bash
-cd aura-finance-backend
+cd backend
 npm run dev
 ```
 
