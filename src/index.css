@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 20% 99%;
+    --foreground: 160 30% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 160 30% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 30% 10%;
+    
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 174 72% 40%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 150 15% 95%;
+    --muted-foreground: 160 10% 45%;
+    
+    --accent: 174 60% 45%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --border: 150 20% 90%;
+    --input: 150 20% 90%;
+    --ring: 160 84% 39%;
+    
+    --radius: 0.75rem;
+    
+    --chart-1: 160 84% 39%;
+    --chart-2: 220 70% 55%;
+    --chart-3: 280 65% 60%;
+    --chart-4: 25 95% 55%;
+    --chart-5: 45 95% 50%;
+    --chart-6: 340 75% 55%;
+    --chart-7: 190 80% 45%;
+    --chart-8: 150 15% 50%;
+    
+    --sidebar-background: 160 30% 8%;
+    --sidebar-foreground: 150 20% 95%;
+    --sidebar-primary: 160 84% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 30% 15%;
+    --sidebar-accent-foreground: 150 20% 95%;
+    --sidebar-border: 160 30% 18%;
+    --sidebar-ring: 160 84% 50%;
+  }
+
+  .dark {
+    --background: 160 30% 6%;
+    --foreground: 150 20% 95%;
+    
+    --card: 160 30% 8%;
+    --card-foreground: 150 20% 95%;
+    
+    --popover: 160 30% 8%;
+    --popover-foreground: 150 20% 95%;
+    
+    --primary: 160 84% 50%;
+    --primary-foreground: 160 30% 6%;
+    
+    --secondary: 174 72% 45%;
+    --secondary-foreground: 160 30% 6%;
+    
+    --muted: 160 30% 15%;
+    --muted-foreground: 150 15% 60%;
+    
+    --accent: 174 60% 50%;
+    --accent-foreground: 160 30% 6%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+    
+    --border: 160 30% 18%;
+    --input: 160 30% 18%;
+    --ring: 160 84% 50%;
+    
+    --sidebar-background: 160 30% 4%;
+    --sidebar-foreground: 150 20% 95%;
+    --sidebar-primary: 160 84% 50%;
+    --sidebar-primary-foreground: 160 30% 6%;
+    --sidebar-accent: 160 30% 12%;
+    --sidebar-accent-foreground: 150 20% 95%;
+    --sidebar-border: 160 30% 15%;
+    --sidebar-ring: 160 84% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+  
+  .gradient-card {
+    @apply bg-gradient-to-br from-card via-card to-muted/30;
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-sm bg-card/80;
+  }
+
+  .gradient-ai {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--accent)) 100%);
+  }
+
+  .gradient-ai-subtle {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--secondary) / 0.1) 50%, hsl(var(--accent) / 0.05) 100%);
+  }
+
+  .ai-glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--secondary) / 0.2);
+  }
+
+  .ai-pulse {
+    animation: ai-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .ai-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--primary) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .typing-indicator {
+    animation: typing 1.4s infinite ease-in-out;
+  }
+
+  @keyframes ai-pulse {
+    0%, 100% { 
+      opacity: 1;
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+    }
+    50% { 
+      opacity: 0.8;
+      box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
+    }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}

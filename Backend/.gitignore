@@ -1,0 +1,13 @@
+node_modules
+dist
+
+# Environment variables - NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Prisma generated files
+/src/generated/prisma
+
+# Test coverage
+coverage
