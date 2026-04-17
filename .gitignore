@@ -30,5 +30,12 @@ dist-ssr
 
 # Test coverage
 coverage
+
+# Project-git specific docs (kept local only)
 Project_Introduction.md
 Thesis.pdf
+
+# ── User-uploaded files ───────────────────────────────────────────────────────
+# Ignore all files inside uploads/ but keep the folder structure via .gitkeep
+Backend/uploads/**
+!Backend/uploads/**/.gitkeep

@@ -1,0 +1,133 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "expenses": "Harcamalar",
+    "budget": "Bütçe",
+    "groups": "Gruplar",
+    "settings": "Ayarlar",
+    "add_expense": "Harcama Ekle"
+  },
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "loading": "Yükleniyor…",
+    "saving": "Kaydediliyor…",
+    "saved": "Kaydedildi!",
+    "sign_out": "Çıkış Yap",
+    "confirm": "Onayla",
+    "back": "Geri",
+    "error": "Hata",
+    "success": "Başarılı"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "welcome": "Tekrar hoş geldin",
+    "overview": "İşte finansal görünümün.",
+    "total_balance": "Toplam Bakiye",
+    "monthly_income": "Aylık Gelir",
+    "monthly_expenses": "Aylık Harcama",
+    "savings_rate": "Tasarruf Oranı",
+    "loading": "Panel verileri yükleniyor..."
+  },
+  "expenses": {
+    "title": "Harcamalar",
+    "add": "Harcama Ekle",
+    "description": "Harcamalarınızı takip edin ve yönetin.",
+    "no_expenses": "Harcama bulunamadı.",
+    "amount": "Tutar",
+    "category": "Kategori",
+    "date": "Tarih",
+    "notes": "Notlar",
+    "search": "Harcama ara…"
+  },
+  "budget": {
+    "title": "Bütçe",
+    "description": "Aylık bütçe limitlerini yönetin.",
+    "allocated": "Ayrılan",
+    "spent": "Harcanan",
+    "remaining": "Kalan",
+    "optimize": "AI ile Optimize Et"
+  },
+  "groups": {
+    "title": "Gruplar",
+    "description": "Ortak harcamaları yönetin.",
+    "create": "Grup Oluştur",
+    "members": "Üyeler",
+    "add_member": "Üye Ekle"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "description": "Hesabınızı ve tercihlerinizi yönetin.",
+    "tabs": {
+      "profile": "Profil",
+      "appearance": "Görünüm",
+      "notifications": "Bildirimler",
+      "security": "Güvenlik"
+    },
+    "profile": {
+      "title": "Profil Bilgileri",
+      "description": "Ad, kullanıcı adı ve iletişim bilgilerini güncelleyin.",
+      "full_name": "Ad Soyad",
+      "username": "Kullanıcı Adı",
+      "phone": "Telefon (isteğe bağlı)",
+      "email": "E-posta",
+      "email_locked": "E-posta kayıt sonrası değiştirilemez.",
+      "save": "Profili Kaydet",
+      "financial": "Finansal ve Bölgesel Ayarlar",
+      "financial_desc": "Aylık gelirinizi, para biriminizi ve dilinizi ayarlayın.",
+      "monthly_income": "Aylık Gelir",
+      "savings_target": "Tasarruf Hedefi %20",
+      "daily_budget": "Günlük Bütçe",
+      "currency": "Para Birimi",
+      "language": "Dil",
+      "upload_photo": "Fotoğraf Yükle",
+      "change_photo": "Fotoğrafı Değiştir"
+    },
+    "appearance": {
+      "title": "Görünüm Tercihleri",
+      "description": "Temanızı seçin. Değişiklikler anında uygulanır.",
+      "light": "Açık",
+      "dark": "Koyu",
+      "system": "Sistem",
+      "light_desc": "Temiz ve parlak",
+      "dark_desc": "Göz dostu",
+      "system_desc": "İşletim sisteminizi takip eder",
+      "save": "Temayı Kaydet"
+    },
+    "notifications": {
+      "title": "Bildirim Tercihleri",
+      "description": "Hangi bildirimleri almak istediğinizi seçin.",
+      "email": "E-posta Bildirimleri",
+      "email_desc": "Güncellemeler ve uyarılar e-posta ile gelsin",
+      "budget_alerts": "Bütçe Uyarıları",
+      "budget_alerts_desc": "Harcama limite yaklaşınca bildir",
+      "weekly_report": "Haftalık Raporlar",
+      "weekly_report_desc": "Her Pazartesi haftalık özet",
+      "ai_insights": "AI İçgörüleri",
+      "ai_insights_desc": "AI destekli finansal öneriler al",
+      "save": "Tercihleri Kaydet"
+    },
+    "security": {
+      "title": "Şifre Değiştir",
+      "description": "Yeni şifre belirlemeden önce mevcut şifrenizi doğrulayın.",
+      "current_password": "Mevcut Şifre",
+      "new_password": "Yeni Şifre",
+      "confirm_password": "Yeni Şifreyi Onayla",
+      "change": "Şifre Değiştir",
+      "changing": "Güncelleniyor…",
+      "changed": "Değiştirildi!",
+      "strength_weak": "Zayıf",
+      "strength_fair": "Orta",
+      "strength_good": "İyi",
+      "strength_strong": "Güçlü",
+      "danger_zone": "Tehlikeli Bölge",
+      "danger_desc": "Geri alınamaz işlemler. Dikkatli okuyun.",
+      "sign_out_desc": "Oturumunuzu kapatın. Verileriniz korunur.",
+      "clear_expenses": "Tüm Kişisel Harcamaları Temizle",
+      "clear_desc": "Kayıt ettiğiniz tüm kişisel harcamalar silinir. Grup harcamaları korunur.",
+      "clear_confirm": "Evet, Tüm Harcamaları Sil"
+    }
+  }
+}

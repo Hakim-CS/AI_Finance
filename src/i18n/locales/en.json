@@ -1,0 +1,133 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "expenses": "Expenses",
+    "budget": "Budget",
+    "groups": "Groups",
+    "settings": "Settings",
+    "add_expense": "Add Expense"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "sign_out": "Sign Out",
+    "confirm": "Confirm",
+    "back": "Back",
+    "error": "Error",
+    "success": "Success"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "overview": "Here's your financial overview.",
+    "total_balance": "Total Balance",
+    "monthly_income": "Monthly Income",
+    "monthly_expenses": "Monthly Expenses",
+    "savings_rate": "Savings Rate",
+    "loading": "Loading dashboard data..."
+  },
+  "expenses": {
+    "title": "Expenses",
+    "add": "Add Expense",
+    "description": "Track and manage your spending.",
+    "no_expenses": "No expenses found.",
+    "amount": "Amount",
+    "category": "Category",
+    "date": "Date",
+    "notes": "Notes",
+    "search": "Search expenses…"
+  },
+  "budget": {
+    "title": "Budget",
+    "description": "Manage your monthly budget limits.",
+    "allocated": "Allocated",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "optimize": "Optimize with AI"
+  },
+  "groups": {
+    "title": "Groups",
+    "description": "Manage shared expenses with others.",
+    "create": "Create Group",
+    "members": "Members",
+    "add_member": "Add Member"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account and preferences.",
+    "tabs": {
+      "profile": "Profile",
+      "appearance": "Appearance",
+      "notifications": "Alerts",
+      "security": "Security"
+    },
+    "profile": {
+      "title": "Profile Information",
+      "description": "Update your name, username, and contact details.",
+      "full_name": "Full Name",
+      "username": "Username",
+      "phone": "Phone (optional)",
+      "email": "Email",
+      "email_locked": "Email cannot be changed after registration.",
+      "save": "Save Profile",
+      "financial": "Financial & Regional Settings",
+      "financial_desc": "Set your monthly income, preferred currency, and language.",
+      "monthly_income": "Monthly Income",
+      "savings_target": "Savings Target 20%",
+      "daily_budget": "Daily Budget",
+      "currency": "Currency",
+      "language": "Language",
+      "upload_photo": "Upload Photo",
+      "change_photo": "Change Photo"
+    },
+    "appearance": {
+      "title": "Display Preferences",
+      "description": "Choose your theme. Changes apply instantly.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "light_desc": "Clean & bright",
+      "dark_desc": "Easy on the eyes",
+      "system_desc": "Follows your OS",
+      "save": "Save Theme"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Choose what you want to be alerted about.",
+      "email": "Email Notifications",
+      "email_desc": "Receive updates and alerts via email",
+      "budget_alerts": "Budget Alerts",
+      "budget_alerts_desc": "Notify when spending approaches your limit",
+      "weekly_report": "Weekly Reports",
+      "weekly_report_desc": "Get a weekly spending digest every Monday",
+      "ai_insights": "AI Insights",
+      "ai_insights_desc": "Receive AI-powered financial recommendations",
+      "save": "Save Preferences"
+    },
+    "security": {
+      "title": "Change Password",
+      "description": "Verify your current password before setting a new one.",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm New Password",
+      "change": "Change Password",
+      "changing": "Updating…",
+      "changed": "Changed!",
+      "strength_weak": "Weak",
+      "strength_fair": "Fair",
+      "strength_good": "Good",
+      "strength_strong": "Strong",
+      "danger_zone": "Danger Zone",
+      "danger_desc": "Irreversible actions. Read carefully.",
+      "sign_out_desc": "End your current session. Data stays intact.",
+      "clear_expenses": "Clear All Personal Expenses",
+      "clear_desc": "Delete every personal expense you've recorded. Group expenses are preserved.",
+      "clear_confirm": "Yes, Delete All Expenses"
+    }
+  }
+}

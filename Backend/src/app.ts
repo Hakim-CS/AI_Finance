@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import * as tf from '@tensorflow/tfjs';
 import { exec } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 
 dotenv.config();
 
@@ -17,6 +19,28 @@ const jwtSecret = process.env.JWT_SECRET;
 
 app.use(cors());
 app.use(express.json());
+
+// ── Avatar static files ────────────────────────────────────────────────────
+const AVATARS_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
+if (!fs.existsSync(AVATARS_DIR)) fs.mkdirSync(AVATARS_DIR, { recursive: true });
+app.use('/avatars', express.static(AVATARS_DIR));
+
+// ── Multer setup for avatar uploads ───────────────────────────────────────
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, AVATARS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${uuidv4()}${ext}`);
+  },
+});
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },          // 2 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed') as any, false);
+  },
+});
 
 // Global logging middleware
 app.use((req, res, next) => {
@@ -262,26 +286,207 @@ app.get('/debug/routes', (req, res) => {
 // USER INFO
 app.get('/auth/me', protect, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, email, name, username, income FROM "User" WHERE id = $1', [req.user?.id]);
+    const result = await pool.query(
+      'SELECT id, email, name, username, income, phone, avatar_url FROM "User" WHERE id = $1',
+      [req.user?.id]
+    );
     res.json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ message: 'Error fetching user', details: error.message });
   }
 });
 
+
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SETTINGS ENDPOINTS
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /auth/me — fetch own profile (updated to include new columns)
+// Already defined above; this version returns phone + avatar_url too.
+
+// PUT /auth/user — update profile fields (name, username, income, phone)
 app.put('/auth/user', protect, async (req, res) => {
-  const { income } = req.body;
-  console.log(`Updating income for user ${req.user?.id} to: ${income}`);
+  const { income, name, username, phone } = req.body;
   try {
+    const updates: string[] = [];
+    const params: any[] = [];
+    let idx = 1;
+
+    if (income    !== undefined) { updates.push(`income   = $${idx++}`); params.push(income); }
+    if (name      !== undefined) { updates.push(`name     = $${idx++}`); params.push(name); }
+    if (username  !== undefined) { updates.push(`username = $${idx++}`); params.push(username); }
+    if (phone     !== undefined) { updates.push(`phone    = $${idx++}`); params.push(phone); }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No fields provided to update' });
+    }
+
+    // Always bump updated_at
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    params.push(req.user!.id);
+
     const result = await pool.query(
-      'UPDATE "User" SET income = $1 WHERE id = $2 RETURNING id, email, name, username, income',
-      [income, req.user?.id]
+      `UPDATE "User" SET ${updates.join(', ')} WHERE id = $${idx}
+       RETURNING id, email, name, username, income, phone`,
+      params
+    );
+    console.log(`[Profile] Updated user ${req.user!.id}:`, Object.keys(req.body));
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    if (error.code === '23505') return res.status(409).json({ message: 'Username already taken' });
+    res.status(500).json({ message: 'Error updating profile', details: error.message });
+  }
+});
+
+// POST /auth/avatar — upload a profile photo (multipart/form-data, field: "avatar")
+app.post('/auth/avatar', protect, uploadAvatar.single('avatar'), async (req: any, res: any) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+  const newUrl = `http://localhost:5001/avatars/${req.file.filename}`;
+
+  try {
+    // If the user already has an avatar, delete the old file to save disk space
+    const existing = await pool.query('SELECT avatar_url FROM "User" WHERE id = $1', [req.user!.id]);
+    const oldUrl: string | null = existing.rows[0]?.avatar_url;
+    if (oldUrl) {
+      const oldFile = path.join(AVATARS_DIR, path.basename(oldUrl));
+      if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+    }
+
+    // Save new URL
+    const result = await pool.query(
+      'UPDATE "User" SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, avatar_url',
+      [newUrl, req.user!.id]
+    );
+    console.log(`[Avatar] Updated for user ${req.user!.id}: ${newUrl}`);
+    res.json({ avatar_url: result.rows[0].avatar_url });
+  } catch (error: any) {
+    // Clean up the uploaded file if DB update failed
+    fs.unlinkSync(path.join(AVATARS_DIR, req.file.filename));
+    res.status(500).json({ message: 'Error saving avatar', details: error.message });
+  }
+});
+
+// POST /auth/change-password — verify current password, then hash + save new one
+app.post('/auth/change-password', protect, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'currentPassword and newPassword are required' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters' });
+  }
+
+  try {
+    // 1. Fetch stored hash
+    const result = await pool.query(
+      'SELECT password_hash FROM "User" WHERE id = $1',
+      [req.user!.id]
+    );
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // 2. Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // 3. Hash and save the new password
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE "User" SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [newHash, req.user!.id]
+    );
+
+    console.log(`[Security] Password changed for user ${req.user!.id}`);
+    res.json({ message: 'Password changed successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error changing password', details: error.message });
+  }
+});
+
+// GET /auth/preferences — load theme, currency, language, notification toggles
+app.get('/auth/preferences', protect, async (req, res) => {
+  try {
+    // Upsert a default row if one doesn't exist yet
+    await pool.query(
+      `INSERT INTO "UserPreferences" ("userId") VALUES ($1) ON CONFLICT ("userId") DO NOTHING`,
+      [req.user!.id]
+    );
+    const result = await pool.query(
+      `SELECT theme, currency, language,
+              notif_email, notif_budget_alerts, notif_weekly_report, notif_ai_insights
+       FROM "UserPreferences" WHERE "userId" = $1`,
+      [req.user!.id]
     );
     res.json(result.rows[0]);
   } catch (error: any) {
-    res.status(500).json({ message: 'Error updating income', details: error.message });
+    res.status(500).json({ message: 'Error fetching preferences', details: error.message });
   }
 });
+
+// PUT /auth/preferences — save theme, currency, language, notification toggles
+app.put('/auth/preferences', protect, async (req, res) => {
+  const {
+    theme, currency, language,
+    notif_email, notif_budget_alerts, notif_weekly_report, notif_ai_insights
+  } = req.body;
+
+  try {
+    // UPSERT: create the row if missing, otherwise update all provided fields
+    const result = await pool.query(
+      `INSERT INTO "UserPreferences"
+         ("userId", theme, currency, language,
+          notif_email, notif_budget_alerts, notif_weekly_report, notif_ai_insights,
+          updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+       ON CONFLICT ("userId") DO UPDATE SET
+         theme               = COALESCE(EXCLUDED.theme,               "UserPreferences".theme),
+         currency            = COALESCE(EXCLUDED.currency,            "UserPreferences".currency),
+         language            = COALESCE(EXCLUDED.language,            "UserPreferences".language),
+         notif_email         = COALESCE(EXCLUDED.notif_email,         "UserPreferences".notif_email),
+         notif_budget_alerts = COALESCE(EXCLUDED.notif_budget_alerts, "UserPreferences".notif_budget_alerts),
+         notif_weekly_report = COALESCE(EXCLUDED.notif_weekly_report, "UserPreferences".notif_weekly_report),
+         notif_ai_insights   = COALESCE(EXCLUDED.notif_ai_insights,   "UserPreferences".notif_ai_insights),
+         updated_at          = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [
+        req.user!.id,
+        theme   ?? 'system',
+        currency ?? 'TRY',
+        language ?? 'en',
+        notif_email         ?? true,
+        notif_budget_alerts ?? true,
+        notif_weekly_report ?? true,
+        notif_ai_insights   ?? true,
+      ]
+    );
+    console.log(`[Preferences] Saved for user ${req.user!.id}`);
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error saving preferences', details: error.message });
+  }
+});
+
+// DELETE /expenses/all — wipe all personal expenses for the current user
+app.delete('/expenses/all', protect, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM "Expense" WHERE "userId" = $1 AND "groupId" IS NULL RETURNING id`,
+      [req.user!.id]
+    );
+    console.log(`[Danger] User ${req.user!.id} deleted ${result.rowCount} personal expenses`);
+    res.json({ message: `Deleted ${result.rowCount} expenses` });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error clearing expenses', details: error.message });
+  }
+});
+
+
 
 // 3. Add a member to a group
 app.post('/groups/:id/members', protect, async (req, res) => {

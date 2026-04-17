@@ -1,11 +1,13 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePreferences } from './PreferencesContext';
 
 interface User {
   id: string;
   email: string;
-  name?: string; 
+  name?: string;
   username?: string;
+  phone?: string;
   income?: number;
 }
 
@@ -26,6 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const { loadPrefs } = usePreferences();
+
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -50,29 +54,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await fetch('http://localhost:5001/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Login failed');
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const newUser: User = { 
-        id: data.user.id, 
-        email: data.user.email, 
-        name: data.user.name, 
+      const newUser: User = {
+        id:       data.user.id,
+        email:    data.user.email,
+        name:     data.user.name,
         username: data.user.username,
-        income: Number(data.user.income) || 0
+        phone:    data.user.phone,
+        income:   Number(data.user.income) || 0,
       };
       setUser(newUser);
       setToken(data.token);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(newUser));
+
+      // Load user preferences globally right after login
+      await loadPrefs(data.token);
+
       navigate('/');
     } finally {
       setIsLoading(false);

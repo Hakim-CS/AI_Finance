@@ -17,6 +17,7 @@ import { useExpenses } from "@/hooks/useExpenses";
 import { useBudget } from "@/hooks/useBudget";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { usePreferences } from "@/context/PreferencesContext";
 import { useState } from "react";
 
 const months = [
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const { data: expenses, isLoading: isExpensesLoading } = useExpenses();
   const { data: budgetLimits, isLoading: isBudgetLoading } = useBudget();
   const { user } = useAuth();
+  const { formatAmount } = usePreferences();
 
   const [selectedMonth, setSelectedMonth] = useState(months[new Date().getMonth()]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -173,19 +175,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <SummaryCard
           title="Total Balance"
-          value={`₺${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatAmount(totalBalance)}
           icon={Wallet}
           variant="primary"
         />
         <SummaryCard
           title="Monthly Income"
-          value={`₺${monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatAmount(monthlyIncome)}
           icon={TrendingUp}
           action={<EditIncomeDialog />}
         />
         <SummaryCard
           title="Monthly Expenses"
-          value={`₺${monthlyExpensesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatAmount(monthlyExpensesTotal)}
           icon={TrendingDown}
           trend={{ value: 0, isPositive: true }}
         />
