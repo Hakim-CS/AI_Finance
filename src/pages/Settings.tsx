@@ -7,7 +7,7 @@ import { z } from "zod";
 import {
   User, Palette, Bell, Shield, CreditCard, Globe,
   Save, LogOut, Trash2, Moon, Sun,
-  Monitor, Loader2, Check, Eye, EyeOff, AlertTriangle, Camera,
+  Monitor, Loader2, Check, Eye, EyeOff, AlertTriangle, Camera, RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ async function apiFetch(url: string, token: string, options: RequestInit = {}) {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Settings() {
-  const { user, token, updateUser, logout } = useAuth();
+  const { user, token, updateUser, logout, deletionDate, clearDeletionState } = useAuth();
   const { setTheme } = useTheme();
   const { prefs, setPrefs, savePrefs, isLoading: prefsLoading, registerThemeSetter } = usePreferences();
   const { toast } = useToast();
@@ -158,6 +158,8 @@ export default function Settings() {
           <SecurityTab
             token={token} toast={toast} logout={logout}
             queryClient={queryClient}
+            deletionDate={deletionDate}
+            clearDeletionState={clearDeletionState}
           />
         </TabsContent>
       </Tabs>
@@ -650,12 +652,12 @@ function NotificationsTab({ prefs, updatePref, onSave, isSaving, isLoading }: an
 
 // ─── Security Tab ────────────────────────────────────────────────────────────
 
-function SecurityTab({ token, toast, logout, queryClient }: any) {
+function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDeletionState }: any) {
   const [showCur, setShowCur] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showCon, setShowCon] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [isSaving,   setIsSaving]   = useState(false);
+  const [saved,      setSaved]      = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
   const form = useForm<PasswordValues>({
@@ -663,7 +665,7 @@ function SecurityTab({ token, toast, logout, queryClient }: any) {
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
-  const newPass = form.watch("newPassword");
+  const newPass  = form.watch("newPassword");
   const strength = passwordStrength(newPass);
 
   const onSubmit = async (values: PasswordValues) => {
@@ -685,13 +687,37 @@ function SecurityTab({ token, toast, logout, queryClient }: any) {
     }
   };
 
-  const handleClearExpenses = async () => {
+  // Soft delete — sets deleted_at; user stays logged in to see the restoration option
+  const handleDeleteAccount = async () => {
     if (!token) return;
     setIsClearing(true);
     try {
-      const data = await apiFetch("/expenses/all", token, { method: "DELETE" });
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      toast({ title: "Expenses cleared", description: data.message });
+      const data = await apiFetch("/auth/account", token, { method: "DELETE" });
+      // data.deletion_date is the ISO date when the account will be permanently deleted
+      toast({
+        title:       "Account scheduled for deletion",
+        description: `You have 14 days to change your mind. Permanent deletion on ${new Date(data.deletion_date).toLocaleDateString()}.`,
+      });
+      // Banner will appear automatically — AuthContext's deletionDate is updated on next render
+      // by triggering a re-login or by directly updating it. Easiest: store in localStorage.
+      localStorage.setItem("deletionDate", data.deletion_date);
+      // Force AuthContext to pick it up by dispatching a storage event
+      window.dispatchEvent(new StorageEvent("storage", { key: "deletionDate", newValue: data.deletion_date }));
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  // Restore — clears deleted_at; called from the Security tab as an alternative to the banner
+  const handleRestoreAccount = async () => {
+    if (!token) return;
+    setIsClearing(true);
+    try {
+      await apiFetch("/auth/account/restore", token, { method: "POST" });
+      clearDeletionState?.();
+      toast({ title: "Account Restored!", description: "Your account is active again. Welcome back!" });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -811,13 +837,19 @@ function SecurityTab({ token, toast, logout, queryClient }: any) {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="border-destructive/30">
+      <Card className={deletionDate ? "border-amber-400/60 bg-amber-50/30 dark:bg-amber-950/10" : "border-destructive/30"}>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-destructive" />
-            <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+            <AlertTriangle className={`w-4 h-4 ${deletionDate ? "text-amber-500" : "text-destructive"}`} />
+            <CardTitle className={`text-base ${deletionDate ? "text-amber-600 dark:text-amber-400" : "text-destructive"}`}>
+              {deletionDate ? "Account Pending Deletion" : "Danger Zone"}
+            </CardTitle>
           </div>
-          <CardDescription>Irreversible actions. Read carefully before proceeding.</CardDescription>
+          <CardDescription>
+            {deletionDate
+              ? `Your account is scheduled for permanent deletion on ${new Date(deletionDate).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}. You can restore it anytime before that date.`
+              : "Irreversible actions. Read carefully before proceeding."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
 
@@ -834,46 +866,77 @@ function SecurityTab({ token, toast, logout, queryClient }: any) {
 
           <Separator />
 
-          {/* Clear all personal expenses */}
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-semibold text-destructive">Clear All Personal Expenses</p>
-              <p className="text-xs text-muted-foreground">Delete every personal expense you've recorded. Group expenses are preserved.</p>
+          {deletionDate ? (
+            /* ── Account is already scheduled for deletion: show restore UI ── */
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Restore Your Account</p>
+                <p className="text-xs text-muted-foreground">
+                  Click Restore to cancel the deletion and keep all your data.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                disabled={isClearing}
+                onClick={handleRestoreAccount}
+                className="rounded-lg gap-1.5 bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                {isClearing
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <><RotateCcw className="w-3.5 h-3.5" /> Restore</>}
+              </Button>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isClearing} className="rounded-lg gap-1.5">
-                  {isClearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <><Trash2 className="w-3.5 h-3.5" />Clear</>}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-destructive flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" /> Confirm data deletion
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will <strong>permanently delete all your personal expenses</strong>.
-                    Budget limits and group data are not affected. This cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearExpenses}
-                    className="bg-destructive hover:bg-destructive/90">
-                    Yes, Delete All Expenses
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          ) : (
+            /* ── Normal state: delete account ── */
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="text-sm font-semibold text-destructive">Delete Account</p>
+                <p className="text-xs text-muted-foreground">
+                  Schedules deletion. You have 14 days to restore before data is removed.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={isClearing} className="rounded-lg gap-1.5">
+                    {isClearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <><Trash2 className="w-3.5 h-3.5" />Delete</>}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5" /> Delete your account?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <span className="block">
+                        Your account will be <strong>scheduled for deletion</strong>. You will have a
+                        {" "}<strong>14-day grace period</strong> during which you can log back in and
+                        restore your account at any time.
+                      </span>
+                      <span className="block text-destructive font-medium">
+                        After 14 days, your account, all expenses, preferences, and group memberships
+                        will be permanently and irrecoverably removed.
+                      </span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount}
+                      className="bg-destructive hover:bg-destructive/90">
+                      Schedule Deletion
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </CardContent>
       </Card>
     </>
   );
 }
 
-// ─── Password strength utility ───────────────────────────────────────────────
+// ─── Password strength utility ────────────────────────────────────────────────
 
 function passwordStrength(p: string): { score: number; label: string } {
   if (!p) return { score: 0, label: "None" };

@@ -141,6 +141,9 @@ pool.connect()
       await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS phone       TEXT`);
       await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS avatar_url  TEXT`);
       await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+      // Soft-delete columns ─ is_active=FALSE + deleted_at set = account in 14-day grace period
+      await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS is_active   BOOLEAN NOT NULL DEFAULT TRUE`);
+      await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS deleted_at  TIMESTAMP`);
 
       // Backfill UserPreferences rows for any users who don't have one yet
       await client.query(`
@@ -528,6 +531,81 @@ app.delete('/expenses/all', protect, async (req, res) => {
   }
 });
 
+// DELETE /auth/account — SOFT delete: sets deleted_at + is_active=false.
+// The user gets a 14-day grace period to restore via POST /auth/account/restore.
+// A background job permanently removes the row after 14 days.
+app.delete('/auth/account', protect, async (req, res) => {
+  const userId = req.user!.id;
+  try {
+    await pool.query(
+      `UPDATE "User" SET is_active = FALSE, deleted_at = NOW() WHERE id = $1`,
+      [userId]
+    );
+    const deletionDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    console.log(`[SoftDelete] User ${userId} scheduled for deletion on ${deletionDate}`);
+    res.json({ message: 'Account scheduled for deletion', deletion_date: deletionDate });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error scheduling account deletion', details: error.message });
+  }
+});
+
+// POST /auth/account/restore — cancel scheduled deletion within the 14-day grace period
+app.post('/auth/account/restore', protect, async (req, res) => {
+  const userId = req.user!.id;
+  try {
+    const check = await pool.query(
+      `SELECT deleted_at FROM "User" WHERE id = $1`,
+      [userId]
+    );
+    if (!check.rows[0]?.deleted_at) {
+      return res.status(400).json({ message: 'Account is not scheduled for deletion.' });
+    }
+    const deletedAt     = new Date(check.rows[0].deleted_at);
+    const msElapsed     = Date.now() - deletedAt.getTime();
+    const gracePeriodMs = 14 * 24 * 60 * 60 * 1000;
+    if (msElapsed > gracePeriodMs) {
+      return res.status(410).json({ message: 'Grace period has expired. Account cannot be restored.' });
+    }
+    await pool.query(
+      `UPDATE "User" SET is_active = TRUE, deleted_at = NULL WHERE id = $1`,
+      [userId]
+    );
+    console.log(`[Restore] User ${userId} account restored`);
+    res.json({ message: 'Account restored successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error restoring account', details: error.message });
+  }
+});
+
+// ─── Background Cleanup Job ────────────────────────────────────────────────────
+// Runs every hour. Permanently deletes users whose 14-day grace period has expired.
+// ON DELETE CASCADE on Expense, UserPreferences, GroupMember handles related rows.
+const GRACE_PERIOD_MS = 14 * 24 * 60 * 60 * 1000;
+setInterval(async () => {
+  try {
+    // Fetch users to cleanup so we can also remove their avatar files
+    const expired = await pool.query(
+      `SELECT id, avatar_url FROM "User"
+       WHERE deleted_at IS NOT NULL
+         AND deleted_at < NOW() - INTERVAL '14 days'`
+    );
+    if (expired.rows.length === 0) return;
+
+    for (const row of expired.rows) {
+      // Remove avatar from disk
+      if (row.avatar_url) {
+        const filePath = path.join(AVATARS_DIR, path.basename(row.avatar_url));
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch {}
+        }
+      }
+      await pool.query('DELETE FROM "User" WHERE id = $1', [row.id]);
+      console.log(`[Cleanup] Permanently deleted user ${row.id} (grace period expired)`);
+    }
+  } catch (err: any) {
+    console.error('[Cleanup] Error during expired account deletion:', err.message);
+  }
+}, 60 * 60 * 1000); // every 1 hour
 
 
 // 3. Add a member to a group
@@ -613,11 +691,48 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const result = await pool.query('SELECT id, email, name, username, password_hash, income FROM "User" WHERE email = $1', [email]);
+    const result = await pool.query(
+      `SELECT id, email, name, username, password_hash, income, phone, avatar_url,
+              is_active, deleted_at
+       FROM "User" WHERE email = $1`,
+      [email]
+    );
     const user = result.rows[0];
     if (user && await bcrypt.compare(password, user.password_hash)) {
+
+      // ── Soft-delete: account permanently gone after grace period ──────────
+      if (user.deleted_at) {
+        const deletedAt     = new Date(user.deleted_at);
+        const msElapsed     = Date.now() - deletedAt.getTime();
+        const gracePeriodMs = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+        if (msElapsed > gracePeriodMs) {
+          // Should never happen (cleanup job deletes the row), but guard anyway
+          return res.status(403).json({ message: 'This account no longer exists.' });
+        }
+
+        // Still within grace period — issue a valid token so the user can restore
+        const token       = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '7d' });
+        const deletionDate = new Date(deletedAt.getTime() + gracePeriodMs).toISOString();
+        return res.json({
+          token,
+          status:        'account_pending_deletion',
+          deletion_date: deletionDate,
+          user: {
+            id: user.id, email: user.email, name: user.name, username: user.username,
+            income: user.income, phone: user.phone, avatar_url: user.avatar_url,
+          },
+        });
+      }
+
       const token = jwt.sign({ userId: user.id, email: user.email }, jwtSecret!, { expiresIn: '7d' });
-      return res.json({ token, user: { id: user.id, email: user.email, name: user.name, username: user.username, income: user.income } });
+      return res.json({
+        token,
+        user: {
+          id: user.id, email: user.email, name: user.name, username: user.username,
+          income: user.income, phone: user.phone, avatar_url: user.avatar_url,
+        },
+      });
     }
     res.status(401).json({ message: 'Invalid credentials' });
   } catch (error: any) {

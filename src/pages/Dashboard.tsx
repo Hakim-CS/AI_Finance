@@ -64,7 +64,7 @@ export default function Dashboard() {
 
   // --- START REAL-TIME CALCULATIONS ---
   const monthlyIncome = Number(user?.income) || 0; 
-  const monthIdx = months.indexOf(selectedMonth);
+  const monthIdx = EN_MONTHS.indexOf(selectedMonth);
   
   const currentMonthExpenses = expenses?.filter(e => {
     const d = new Date(e.date);
