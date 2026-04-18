@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useMemo } from "react";
 import { ArrowLeft, Plus, ArrowRight, Receipt, Loader2, TrendingUp, TrendingDown, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:5001/groups/${group.id}`, {
+      const res = await fetch(`${API_BASE}/groups/${group.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -103,7 +104,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     if (!memberEmail.trim()) return;
     setIsAddingMember(true);
     try {
-      const res = await fetch(`http://localhost:5001/groups/${group.id}/members`, {
+      const res = await fetch(`${API_BASE}/groups/${group.id}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +131,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
     if (!expenseData.amount || !expenseData.description) return;
     setIsAddingExpense(true);
     try {
-      const res = await fetch('http://localhost:5001/expenses', {
+      const res = await fetch(`${API_BASE}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

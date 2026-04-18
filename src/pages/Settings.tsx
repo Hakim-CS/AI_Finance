@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
@@ -59,7 +60,7 @@ type PasswordValues = z.infer<typeof passwordSchema>;
 // Note: Preferences state is managed globally by PreferencesContext.
 // These schemas are only for the form validation shapes.
 
-const API = "http://localhost:5001";
+const API = API_BASE;
 
 async function apiFetch(url: string, token: string, options: RequestInit = {}) {
   const res = await fetch(`${API}${url}`, {
@@ -264,7 +265,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       const formData = new FormData();
       formData.append("avatar", blob, "avatar.jpg");  // filename hint for multer
 
-      const res = await fetch("http://localhost:5001/auth/avatar", {
+      const res = await fetch(`${API_BASE}/auth/avatar`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,       // browser auto-sets correct multipart Content-Type

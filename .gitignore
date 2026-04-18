@@ -39,3 +39,7 @@ Thesis.pdf
 # Ignore all files inside uploads/ but keep the folder structure via .gitkeep
 Backend/uploads/**
 !Backend/uploads/**/.gitkeep
+
+# Local environment overrides (contain IP addresses / secrets)
+.env.local
+.env.*.local

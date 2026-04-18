@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useQuery } from '@tanstack/react-query';
 
 export interface Category {
@@ -8,7 +9,7 @@ export interface Category {
 }
 
 const fetchCategories = async (): Promise<Category[]> => {
-  const response = await fetch('http://localhost:5001/categories');
+  const response = await fetch(`${API_BASE}/categories`);
   if (!response.ok) {
     throw new Error('Failed to fetch categories');
   }

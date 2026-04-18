@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -87,7 +88,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/expenses/${expense.id}`, {
+      const response = await fetch(`${API_BASE}/expenses/${expense.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

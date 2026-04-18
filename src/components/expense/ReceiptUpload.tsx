@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useCallback } from "react";
 import { Upload, Camera, Image, Loader2, Check, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +58,7 @@ export function ReceiptUpload() {
       console.log("OCR Raw Text:", rawText);
 
       // 2. send text to backend for parsing
-      const response = await fetch('http://localhost:5001/expenses/parse-receipt', {
+      const response = await fetch(`${API_BASE}/expenses/parse-receipt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ export function ReceiptUpload() {
     if (!parsedData || !token) return;
     
     try {
-      const response = await fetch('http://localhost:5001/expenses', {
+      const response = await fetch(`${API_BASE}/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

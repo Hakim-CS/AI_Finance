@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 /**
  * DeletionBanner
  * ──────────────
@@ -48,7 +49,7 @@ export function DeletionBanner() {
     if (!token) return;
     setRestoring(true);
     try {
-      const res = await fetch("http://localhost:5001/auth/account/restore", {
+      const res = await fetch(`${API_BASE}/auth/account/restore`, {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

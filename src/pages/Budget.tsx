@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export default function Budget() {
     const fetchBudget = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:5001/budget', {
+        const res = await fetch(`${API_BASE}/budget`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const limits = await res.json();
@@ -101,7 +102,7 @@ export default function Budget() {
     
     // Save to DB
     try {
-      await fetch('http://localhost:5001/budget', {
+      await fetch(`${API_BASE}/budget`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ budgets: [{ categoryId, limitAmount: newAmount }] })
@@ -125,7 +126,7 @@ export default function Budget() {
 
     // Persist all to DB
     try {
-      await fetch('http://localhost:5001/budget', {
+      await fetch(`${API_BASE}/budget`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ budgets: newBudgets })

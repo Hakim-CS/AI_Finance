@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
   const handleOptimize = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/budget/optimize', {
+      const response = await fetch(`${API_BASE}/budget/optimize`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

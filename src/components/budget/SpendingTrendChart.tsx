@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -19,7 +20,7 @@ export function SpendingTrendChart() {
     const fetchTrend = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:5001/expenses/history', {
+        const res = await fetch(`${API_BASE}/expenses/history`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const history = await res.json();

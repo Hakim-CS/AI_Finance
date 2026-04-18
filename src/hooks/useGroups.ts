@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 
@@ -30,7 +31,7 @@ export interface Group {
 
 const fetchGroups = async (token: string | null): Promise<Group[]> => {
   if (!token) return [];
-  const response = await fetch('http://localhost:5001/groups', {
+  const response = await fetch(`${API_BASE}/groups`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Failed to fetch groups');
@@ -49,7 +50,7 @@ export const useGroups = () => {
 
   const createGroupMutation = useMutation({
     mutationFn: async (newGroup: { name: string; description: string; memberEmails: string[] }) => {
-      const response = await fetch('http://localhost:5001/groups', {
+      const response = await fetch(`${API_BASE}/groups`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 /**
  * PreferencesContext
  * ─────────────────
@@ -135,7 +136,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const loadPrefs = useCallback(async (token: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/auth/preferences", {
+      const res = await fetch(`${API_BASE}/auth/preferences`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -153,7 +154,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [applySideEffects]);
 
   const savePrefs = useCallback(async (token: string) => {
-    const res = await fetch("http://localhost:5001/auth/preferences", {
+    const res = await fetch(`${API_BASE}/auth/preferences`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(prefs),

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AIBadge } from "./AIBadge";
@@ -26,7 +27,7 @@ export function AIInsightsPanel() {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/ai/insights', {
+        const res = await fetch(`${API_BASE}/ai/insights`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch AI insights");

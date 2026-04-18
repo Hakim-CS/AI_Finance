@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -55,7 +56,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5001/expenses/${expenseId}`, {
+      const response = await fetch(`${API_BASE}/expenses/${expenseId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

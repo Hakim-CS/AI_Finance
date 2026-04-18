@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -26,14 +27,14 @@ export function AIPredictiveChart() {
       setLoading(true);
       try {
         // 1. Fetch History
-        const histRes = await fetch('http://localhost:5001/expenses/history', {
+        const histRes = await fetch(`${API_BASE}/expenses/history`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!histRes.ok) throw new Error("History fetch failed");
         const history = await histRes.json();
 
         // 2. Fetch Forecast
-        const foreRes = await fetch('http://localhost:5001/expenses/forecast', {
+        const foreRes = await fetch(`${API_BASE}/expenses/forecast`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!foreRes.ok) throw new Error("Forecast fetch failed");

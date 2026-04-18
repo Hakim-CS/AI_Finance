@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Sparkles, Target, Zap, Shield, Wallet, Loader2, AlertCircle } from "lucide-react";
@@ -31,7 +32,7 @@ export function AIBudgetPredictions() {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/ai/budget-predictions', {
+        const res = await fetch(`${API_BASE}/ai/budget-predictions`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch AI budget predictions");
