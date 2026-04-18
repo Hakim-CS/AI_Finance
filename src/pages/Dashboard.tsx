@@ -18,11 +18,17 @@ import { useBudget } from "@/hooks/useBudget";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
-const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+// Month values kept in English for API/filter logic; display label uses t()
+const MONTH_KEYS = [
+  "january","february","march","april","may","june",
+  "july","august","september","october","november","december"
+];
+const EN_MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
 ];
 
 interface ChartCategoryData {
@@ -49,8 +55,9 @@ export default function Dashboard() {
   const { data: budgetLimits, isLoading: isBudgetLoading } = useBudget();
   const { user } = useAuth();
   const { formatAmount } = usePreferences();
+  const { t } = useTranslation();
 
-  const [selectedMonth, setSelectedMonth] = useState(months[new Date().getMonth()]);
+  const [selectedMonth, setSelectedMonth] = useState(EN_MONTHS[new Date().getMonth()]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const isLoading = isCatsLoading || isExpensesLoading || isBudgetLoading;
@@ -119,7 +126,7 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="ml-2">Loading dashboard data...</p>
+        <p className="ml-2">{t('dashboard.loading')}</p>
       </div>
     );
   }
@@ -131,12 +138,10 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1 ">Welcome back{displayName ? (
-            <>
-              , <span className="font-bold text-foreground">{displayName}</span>
-            </>
-          ) : ''}<span className="font-bold text-foreground">!</span> Here's your financial overview.</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('dashboard.welcome')}{displayName ? (
+            <>, <span className="font-bold text-foreground">{displayName}</span></>
+          ) : ''}<span className="font-bold text-foreground">!</span> {t('dashboard.overview')}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -146,8 +151,8 @@ export default function Dashboard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {months.map(month => (
-                  <SelectItem key={month} value={month}>{month}</SelectItem>
+                {EN_MONTHS.map((month, i) => (
+                  <SelectItem key={month} value={month}>{t(`months.${MONTH_KEYS[i]}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -165,7 +170,7 @@ export default function Dashboard() {
           <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
             <Link to="/add-expense">
               <Plus className="w-4 h-4 mr-2" />
-              Add Expense
+              {t('dashboard.add_expense')}
             </Link>
           </Button>
         </div>
@@ -173,30 +178,10 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <SummaryCard
-          title="Total Balance"
-          value={formatAmount(totalBalance)}
-          icon={Wallet}
-          variant="primary"
-        />
-        <SummaryCard
-          title="Monthly Income"
-          value={formatAmount(monthlyIncome)}
-          icon={TrendingUp}
-          action={<EditIncomeDialog />}
-        />
-        <SummaryCard
-          title="Monthly Expenses"
-          value={formatAmount(monthlyExpensesTotal)}
-          icon={TrendingDown}
-          trend={{ value: 0, isPositive: true }}
-        />
-        <SummaryCard
-          title="Savings Rate"
-          value={`${savingsRate}%`}
-          icon={PiggyBank}
-          trend={{ value: 0, isPositive: true }}
-        />
+        <SummaryCard title={t('dashboard.total_balance')}    value={formatAmount(totalBalance)}         icon={Wallet}      variant="primary" />
+        <SummaryCard title={t('dashboard.monthly_income')}   value={formatAmount(monthlyIncome)}        icon={TrendingUp}  action={<EditIncomeDialog />} />
+        <SummaryCard title={t('dashboard.monthly_expenses')} value={formatAmount(monthlyExpensesTotal)} icon={TrendingDown} trend={{ value: 0, isPositive: true }} />
+        <SummaryCard title={t('dashboard.savings_rate')}     value={`${savingsRate}%`}                 icon={PiggyBank}   trend={{ value: 0, isPositive: true }} />
       </div>
 
       <AIFeatureHighlight expenses={expenses || []} />

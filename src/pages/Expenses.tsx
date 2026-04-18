@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Loader2 } from "lucide-react"; // Import Loader2
+import { Plus, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DateRange } from "react-day-picker";
 import { ExpenseFilters } from "@/components/expense/ExpenseFilters";
@@ -7,13 +7,16 @@ import { ExpenseTable } from "@/components/expense/ExpenseTable";
 import { Button } from "@/components/ui/button";
 import { useExpenses } from "@/hooks/useExpenses";
 import { Card } from "@/components/ui/card";
-
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 export default function Expenses() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("date-desc");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
 
   const { data: expenses, isLoading, isError, error } = useExpenses();
 
@@ -80,7 +83,7 @@ export default function Expenses() {
     return (
       <Card className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="ml-2">Loading expenses...</p>
+        <p className="ml-2">{t('expenses.loading')}</p>
       </Card>
     );
   }
@@ -88,9 +91,9 @@ export default function Expenses() {
   if (isError) {
     return (
       <Card className="p-8 text-center text-destructive">
-        <h1 className="text-xl font-bold">Error</h1>
+        <h1 className="text-xl font-bold">{t('common.error')}</h1>
         <p className="text-muted-foreground mt-1">
-          Failed to load expenses: {error?.message}
+          {t('expenses.load_error')}: {error?.message}
         </p>
       </Card>
     );
@@ -102,15 +105,13 @@ export default function Expenses() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Expenses</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and track all your expenses
-          </p>
+          <h1 className="text-3xl font-bold text-foreground">{t('expenses.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('expenses.description')}</p>
         </div>
         <Button asChild className="gradient-primary hover:opacity-90">
           <Link to="/add-expense">
             <Plus className="w-4 h-4 mr-2" />
-            Add Expense
+            {t('expenses.add')}
           </Link>
         </Button>
       </div>
@@ -131,17 +132,15 @@ export default function Expenses() {
       {/* Summary */}
       <div className="flex items-center justify-between text-sm">
         <p className="text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filteredExpenses.length}</span> expenses
+          {t('expenses.showing')} <span className="font-medium text-foreground">{filteredExpenses.length}</span> {t('expenses.expenses_count')}
         </p>
         <p className="text-muted-foreground">
-          Total: <span className="font-semibold text-primary">₺{totalAmount.toFixed(2)}</span>
+          {t('expenses.total')}: <span className="font-semibold text-primary">{formatAmount(totalAmount)}</span>
         </p>
       </div>
 
       {/* Table */}
-      <ExpenseTable
-        expenses={filteredExpenses}
-      />
+      <ExpenseTable expenses={filteredExpenses} />
     </div>
   );
 }

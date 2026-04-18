@@ -14,18 +14,25 @@ import { mockBudgetCategories, BudgetCategory } from "@/data/budgetData";
 import { useAuth } from "@/context/AuthContext";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
-const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+// Internal English values used for filter logic
+const MONTH_KEYS = [
+  "january","february","march","april","may","june",
+  "july","august","september","october","november","december"
+];
+const EN_MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
 ];
 
 export default function Budget() {
   const { data: allExpenses, isLoading: expensesLoading } = useExpenses();
   const { token } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const [selectedMonth, setSelectedMonth] = useState(months[new Date().getMonth()]);
+  const [selectedMonth, setSelectedMonth] = useState(EN_MONTHS[new Date().getMonth()]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [categories, setCategories] = useState<BudgetCategory[]>(mockBudgetCategories);
   const [loadingBudget, setLoadingBudget] = useState(true);
@@ -63,7 +70,7 @@ export default function Budget() {
   useEffect(() => {
     if (!allExpenses) return;
 
-    const monthIdx = months.indexOf(selectedMonth);
+    const monthIdx = EN_MONTHS.indexOf(selectedMonth);
     const filtered = allExpenses.filter(e => {
       const d = new Date(e.date);
       return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
@@ -141,8 +148,8 @@ export default function Budget() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Budget</h1>
-          <p className="text-muted-foreground mt-1">Real-time category limits and spending</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('budget.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('budget.description')}</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -155,8 +162,8 @@ export default function Budget() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                {months.map(month => (
-                  <SelectItem key={month} value={month}>{month}</SelectItem>
+                {EN_MONTHS.map((month, i) => (
+                  <SelectItem key={month} value={month}>{t(`months.${MONTH_KEYS[i]}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -183,13 +190,13 @@ export default function Budget() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Category Budgets</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('budget.category_budgets')}</CardTitle>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/5 text-primary" 
+            <Button variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/5 text-primary"
               onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
-              <Sparkles className="h-4 w-4" /> Optimize with AI
+              <Sparkles className="h-4 w-4" /> {t('budget.optimize_ai')}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> Manage</Button>
+            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> {t('budget.manage')}</Button>
           </div>
         </CardHeader>
         <CardContent>

@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PiggyBank, TrendingUp, TrendingDown, Wallet } from "lucide-react";
-import { formatCurrency, getSpentPercentage } from "@/data/budgetData";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
+import { getSpentPercentage } from "@/data/budgetData";
 
 interface BudgetOverviewProps {
   totalBudget: number;
@@ -11,6 +13,8 @@ interface BudgetOverviewProps {
 }
 
 export function BudgetOverview({ totalBudget, totalSpent, month, year }: BudgetOverviewProps) {
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
   const remaining = totalBudget - totalSpent;
   const percentage = getSpentPercentage(totalSpent, totalBudget);
   const isOverBudget = remaining < 0;
@@ -20,14 +24,14 @@ export function BudgetOverview({ totalBudget, totalSpent, month, year }: BudgetO
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Monthly Budget
+            {t("budget.monthly_budget")}
           </CardTitle>
           <div className="p-2 bg-primary/10 rounded-full">
             <Wallet className="h-4 w-4 text-primary" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">{formatCurrency(totalBudget)}</div>
+          <div className="text-2xl font-bold text-foreground">{formatAmount(totalBudget)}</div>
           <p className="text-xs text-muted-foreground mt-1">{month} {year}</p>
         </CardContent>
       </Card>
@@ -35,37 +39,35 @@ export function BudgetOverview({ totalBudget, totalSpent, month, year }: BudgetO
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Total Spent
+            {t("budget.total_spent")}
           </CardTitle>
           <div className="p-2 bg-chart-3/10 rounded-full">
             <TrendingUp className="h-4 w-4 text-chart-3" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">{formatCurrency(totalSpent)}</div>
-          <p className="text-xs text-muted-foreground mt-1">{percentage}% of budget used</p>
+          <div className="text-2xl font-bold text-foreground">{formatAmount(totalSpent)}</div>
+          <p className="text-xs text-muted-foreground mt-1">{percentage}% {t("budget.of_budget_used")}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Remaining
+            {t("budget.remaining")}
           </CardTitle>
-          <div className={`p-2 rounded-full ${isOverBudget ? 'bg-destructive/10' : 'bg-chart-1/10'}`}>
-            {isOverBudget ? (
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            ) : (
-              <PiggyBank className="h-4 w-4 text-chart-1" />
-            )}
+          <div className={`p-2 rounded-full ${isOverBudget ? "bg-destructive/10" : "bg-chart-1/10"}`}>
+            {isOverBudget
+              ? <TrendingDown className="h-4 w-4 text-destructive" />
+              : <PiggyBank className="h-4 w-4 text-chart-1" />}
           </div>
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-            {isOverBudget ? '-' : ''}{formatCurrency(Math.abs(remaining))}
+          <div className={`text-2xl font-bold ${isOverBudget ? "text-destructive" : "text-foreground"}`}>
+            {isOverBudget ? "-" : ""}{formatAmount(Math.abs(remaining))}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {isOverBudget ? 'Over budget' : 'Available to spend'}
+            {isOverBudget ? t("budget.over_budget") : t("budget.available_to_spend")}
           </p>
         </CardContent>
       </Card>
@@ -73,18 +75,15 @@ export function BudgetOverview({ totalBudget, totalSpent, month, year }: BudgetO
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Budget Progress
+            {t("budget.budget_progress")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Progress 
-              value={Math.min(percentage, 100)} 
-              className="h-3"
-            />
+            <Progress value={Math.min(percentage, 100)} className="h-3" />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{percentage}% used</span>
-              <span>{100 - Math.min(percentage, 100)}% left</span>
+              <span>{percentage}% {t("budget.used")}</span>
+              <span>{100 - Math.min(percentage, 100)}% {t("budget.left")}</span>
             </div>
           </div>
         </CardContent>
