@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { BudgetCategory } from "@/data/budgetData";
 import { useTranslation } from "react-i18next";
 import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
+import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumberInput";
 
 interface EditBudgetDialogProps {
   category: BudgetCategory | null;
@@ -22,7 +23,7 @@ export function EditBudgetDialog({ category, open, onOpenChange, onSave }: EditB
 
   const handleSave = () => {
     if (category && amount) {
-      onSave(category.id, parseFloat(amount));
+      onSave(category.id, parseFloat(unformatNumberInput(amount)));
       onOpenChange(false);
     }
   };
@@ -47,9 +48,10 @@ export function EditBudgetDialog({ category, open, onOpenChange, onSave }: EditB
               <Label htmlFor="budget-amount">{t('budgetPage.budget')} ({currencySymbol})</Label>
               <Input
                 id="budget-amount"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => setAmount(formatNumberInput(e.target.value))}
                 placeholder={t('budgetPage.budget')}
                 className="text-lg"
               />

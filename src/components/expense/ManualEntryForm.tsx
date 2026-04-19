@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
+import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumberInput";
 
 export function ManualEntryForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +76,7 @@ export function ManualEntryForm() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          amount: parseFloat(values.amount),
+          amount: parseFloat(unformatNumberInput(values.amount)),
           categoryId: values.category,
           description: values.description,
           date: values.date.toISOString(),
@@ -92,7 +93,7 @@ export function ManualEntryForm() {
       toast({
         title: t('addExpensePage.manual.added'),
         description: t('addExpensePage.manual.addedDesc', {
-          amount: formatAmount(parseFloat(values.amount)),
+          amount: formatAmount(parseFloat(unformatNumberInput(values.amount))),
           description: values.description,
         }),
       });
@@ -130,10 +131,11 @@ export function ManualEntryForm() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                       <Input
                         {...field}
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
                         className="pl-7"
+                        onChange={(e) => field.onChange(formatNumberInput(e.target.value))}
                       />
                     </div>
                   </FormControl>

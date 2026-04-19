@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
 import { useTranslation } from "react-i18next";
 import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
+import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumberInput";
 import {
   BarChart,
   Bar,
@@ -144,7 +145,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         },
         body: JSON.stringify({
           ...expenseData,
-          amount: parseFloat(expenseData.amount),
+          amount: parseFloat(unformatNumberInput(expenseData.amount)),
           groupId: group.id
         })
       });
@@ -500,11 +501,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">{currencySymbol}</span>
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="pl-7"
                   placeholder="0.00"
                   value={expenseData.amount}
-                  onChange={(e) => setExpenseExpenseData({ ...expenseData, amount: e.target.value })}
+                  onChange={(e) => setExpenseExpenseData({ ...expenseData, amount: formatNumberInput(e.target.value) })}
                 />
               </div>
             </div>

@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
+import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumberInput";
 
 export function EditIncomeDialog() {
   const { user, token, updateUser } = useAuth();
@@ -30,7 +31,7 @@ export function EditIncomeDialog() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ income: parseFloat(income) }),
+        body: JSON.stringify({ income: parseFloat(unformatNumberInput(income)) }),
       });
 
       if (!response.ok) throw new Error("Failed to update income");
@@ -38,7 +39,7 @@ export function EditIncomeDialog() {
       const updatedUser = await response.json();
       updateUser({
         ...user!,
-        income: parseFloat(updatedUser.income)
+        income: parseFloat(unformatNumberInput(updatedUser.income.toString()))
       });
       
       toast({ title: t('common.success'), description: t('settings.profile.monthlyIncome') });
@@ -69,10 +70,11 @@ export function EditIncomeDialog() {
             <Label htmlFor="income">{t('settings.profile.monthlyIncome')} ({currencySymbol})</Label>
             <Input
               id="income"
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={income}
-              onChange={(e) => setIncome(e.target.value)}
-              placeholder="e.g. 5200"
+              onChange={(e) => setIncome(formatNumberInput(e.target.value))}
+              placeholder="e.g. 5,200"
             />
           </div>
         </div>

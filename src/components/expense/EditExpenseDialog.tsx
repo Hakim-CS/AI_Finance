@@ -28,6 +28,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Expense } from "@/hooks/useExpenses";
 import { useTranslation } from "react-i18next";
 import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
+import { formatNumberInput, unformatNumberInput, formatNumberForDisplay } from "@/hooks/useFormattedNumberInput";
 
 const formSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -71,7 +72,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
   useEffect(() => {
     if (expense) {
       form.reset({
-        amount: expense.amount.toString(),
+        amount: formatNumberForDisplay(expense.amount),
         category: expense.categoryId,
         description: expense.description,
         date: new Date(expense.date),
@@ -100,7 +101,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          amount: parseFloat(values.amount),
+          amount: parseFloat(unformatNumberInput(values.amount)),
           categoryId: values.category,
           description: values.description,
           date: values.date.toISOString(),
@@ -154,10 +155,11 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                       <Input
                         {...field}
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
                         className="pl-7"
+                        onChange={(e) => field.onChange(formatNumberInput(e.target.value))}
                       />
                     </div>
                   </FormControl>

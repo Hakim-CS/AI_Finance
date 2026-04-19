@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { formatNumberInput, unformatNumberInput, formatNumberForDisplay } from "@/hooks/useFormattedNumberInput";
 import {
   User, Palette, Bell, Shield, CreditCard, Globe,
   Save, LogOut, Trash2, Moon, Sun,
@@ -196,7 +197,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
   const [cropSrc, setCropSrc] = useState<string>("");  // object URL open in cropper
 
   const [incomeDisplay, setIncomeDisplay] = useState(
-    user?.income ? Number(user.income).toLocaleString("en-US") : ""
+    user?.income ? formatNumberForDisplay(user.income) : ""
   );
 
   const form = useForm<ProfileValues>({
@@ -217,7 +218,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       phone: user?.phone || "",
       income: user?.income?.toString() || "0",
     });
-    setIncomeDisplay(user?.income ? Number(user.income).toLocaleString("en-US") : "");
+    setIncomeDisplay(user?.income ? formatNumberForDisplay(user.income) : "");
   }, [user]);
 
   const onSubmit = async (values: ProfileValues) => {
@@ -452,12 +453,8 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                           placeholder="50,000"
                           className="h-10 rounded-xl pl-7 font-bold"
                           onChange={(e) => {
-                            // Strip everything except digits and one decimal point
-                            const raw = e.target.value.replace(/[^0-9.]/g, "");
-                            // Reformat with commas on the integer part
-                            const parts = raw.split(".");
-                            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                            const formatted = parts.slice(0, 2).join(".");
+                            const raw = unformatNumberInput(e.target.value);
+                            const formatted = formatNumberInput(raw);
                             setIncomeDisplay(formatted);
                             // Store the clean numeric string into react-hook-form for validation
                             field.onChange(raw);

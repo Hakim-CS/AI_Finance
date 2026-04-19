@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useLoans, type Loan, type LoanType } from "@/context/LoansContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumberInput";
 
 interface LoanFormDialogProps {
     open: boolean;
@@ -73,7 +74,7 @@ export function LoanFormDialog({ open, onOpenChange, loan }: LoanFormDialogProps
 
         const payload = {
             type,
-            amount: numAmount,
+            amount: parseFloat(unformatNumberInput(amount)),
             person: person.trim(),
             date: date!.toISOString(),
             description: description.trim() || undefined,
@@ -140,12 +141,12 @@ export function LoanFormDialog({ open, onOpenChange, loan }: LoanFormDialogProps
                         <Label htmlFor="loan-amount">{t("loansPage.amount")}</Label>
                         <Input
                             id="loan-amount"
-                            type="number"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
                             min="0"
                             placeholder="0.00"
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={(e) => setAmount(formatNumberInput(e.target.value))}
                         />
                         {errors.amount && <p className="text-sm text-destructive">{errors.amount}</p>}
                     </div>
