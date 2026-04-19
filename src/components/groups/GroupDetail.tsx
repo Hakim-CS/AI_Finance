@@ -169,8 +169,8 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{group.name}</h2>
-            <p className="text-sm text-slate-500 font-medium">{group.description}</p>
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">{group.name}</h2>
+            <p className="text-sm text-muted-foreground font-medium">{group.description}</p>
           </div>
         </div>
 
@@ -209,10 +209,10 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-              <Receipt className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Receipt className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Group Spending</p>
@@ -220,10 +220,10 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
-              <Plus className="w-5 h-5 text-purple-500" />
+            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-secondary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Members Involved</p>
@@ -231,22 +231,22 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center",
-              userBalance >= 0 ? "bg-green-50" : "bg-red-50"
+              userBalance >= 0 ? "bg-success/10" : "bg-destructive/10"
             )}>
               {userBalance >= 0 ?
-                <TrendingUp className="w-5 h-5 text-green-500" /> :
-                <TrendingDown className="w-5 h-5 text-red-500" />
+                <TrendingUp className="w-5 h-5 text-success" /> :
+                <TrendingDown className="w-5 h-5 text-destructive" />
               }
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Your Net Balance</p>
               <p className={cn(
                 "text-2xl font-bold",
-                userBalance >= 0 ? "text-green-600" : "text-red-600"
+                userBalance >= 0 ? "text-success" : "text-destructive"
               )}>
                 {userBalance >= 0 ? "+" : ""}₺{Math.abs(userBalance).toFixed(2)}
               </p>
@@ -257,7 +257,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Settlement Strategy & Chart */}
-        <Card className="lg:col-span-2 border-slate-100 shadow-sm overflow-hidden">
+        <Card className="lg:col-span-2 border-border shadow-sm overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
@@ -281,14 +281,14 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                     <XAxis type="number" hide />
                     <YAxis
                       dataKey="name"
                       type="category"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 13, fill: '#64748b' }}
+                      tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }}
                       width={90}
                     />
                     <Tooltip
@@ -297,9 +297,9 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                         if (active && payload && payload.length) {
                           const val = payload[0].value as number;
                           return (
-                            <div className="bg-white p-2 border border-slate-200 shadow-md rounded-lg text-xs">
-                              <p className="font-bold">{payload[0].payload.name}</p>
-                              <p className={val >= 0 ? "text-green-600" : "text-red-600"}>
+                            <div className="bg-popover p-2 border border-border shadow-md rounded-lg text-xs">
+                              <p className="font-bold text-foreground">{payload[0].payload.name}</p>
+                              <p className={val >= 0 ? "text-success" : "text-destructive"}>
                                 {val >= 0 ? "Is owed: " : "Owes: "} ₺{Math.abs(val).toFixed(2)}
                               </p>
                             </div>
@@ -337,11 +337,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                       const fromMember = getMemberById(group.members, debt.from.toString());
                       const toMember = getMemberById(group.members, debt.to.toString());
                       return (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                        <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card shadow-sm">
                           <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <span className="font-bold text-[13px] text-slate-900 truncate">{fromMember?.name}</span>
+                            <span className="font-bold text-[13px] text-foreground truncate">{fromMember?.name}</span>
                             <span className="text-[10px] text-muted-foreground font-bold uppercase shrink-0">pays</span>
-                            <span className="font-bold text-[13px] text-slate-900 truncate">{toMember?.name}</span>
+                            <span className="font-bold text-[13px] text-foreground truncate">{toMember?.name}</span>
                           </div>
                           <div className="ml-3 shrink-0">
                             <span className="text-[14px] font-black text-primary">₺{debt.amount.toFixed(2)}</span>
@@ -359,7 +359,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         {/* Sidebar Cards */}
         <div className="space-y-6">
           {/* Members & Balances List */}
-          <Card className="border-slate-100 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Members</CardTitle>
             </CardHeader>
@@ -383,9 +383,9 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                       variant="secondary"
                       className={cn(
                         "text-xs px-2 py-0.5 h-6",
-                        balance > 0 && "bg-green-50 text-green-700 border-green-100",
-                        balance < 0 && "bg-red-50 text-red-700 border-red-100",
-                        balance === 0 && "bg-slate-50 text-slate-500 border-slate-100"
+                        balance > 0 && "bg-success/10 text-success border-success/20",
+                        balance < 0 && "bg-destructive/10 text-destructive border-destructive/20",
+                        balance === 0 && "bg-muted text-muted-foreground border-border"
                       )}
                     >
                       {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${balance.toFixed(2)}`}
@@ -402,7 +402,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
           </Card>
 
           {/* Recent Expenses List */}
-          <Card className="border-slate-100 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -417,7 +417,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             <CardContent className="space-y-3">
               {group.expenses.length === 0 ? (
                 <div className="text-center py-6">
-                  <Receipt className="w-9 h-9 text-slate-200 mx-auto mb-2" />
+                  <Receipt className="w-9 h-9 text-muted-foreground/30 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No expenses yet</p>
                 </div>
               ) : (
@@ -425,7 +425,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                   {group.expenses.slice().reverse().map((expense) => {
                     const paidByMember = getMemberById(group.members, expense.paidBy);
                     return (
-                      <div key={expense.id} className="p-2.5 rounded-lg border border-slate-100 bg-white hover:border-primary/20 transition-colors">
+                      <div key={expense.id} className="p-2.5 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-medium text-sm truncate flex-1">{expense.description}</p>
                           <p className="font-bold text-sm ml-2">₺{expense.amount.toFixed(2)}</p>

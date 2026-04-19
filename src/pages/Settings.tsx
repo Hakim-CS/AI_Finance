@@ -98,7 +98,7 @@ export default function Settings() {
     setPrefsSaving(true);
     try {
       await savePrefs(token);
-      toast({ title: t('common.success'), description: "Your settings have been saved to the database." });
+      toast({ title: t('settings.toasts.preferencesSaved'), description: t('settings.toasts.preferencesSavedDesc') });
     } catch (e: any) {
       toast({ title: t('common.error'), description: e.message, variant: "destructive" });
     } finally {
@@ -117,8 +117,8 @@ export default function Settings() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account, preferences and security.</p>
+        <h1 className="text-3xl font-bold text-foreground">{t('settings.title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('settings.subtitle')}</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
@@ -190,6 +190,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { formatAmount } = usePreferences();
+  const { t } = useTranslation();
 
   // ── Cropper state ────────────────────────────────────────────────────────
   const [cropSrc, setCropSrc] = useState<string>("");  // object URL open in cropper
@@ -235,7 +236,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       updateUser({ ...user!, ...updated });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-      toast({ title: "Profile updated", description: "Your changes have been saved." });
+      toast({ title: t('settings.profile.profileUpdated'), description: t('settings.profile.profileUpdatedDesc') });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -274,9 +275,9 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       if (!res.ok) throw new Error(data.message || "Upload failed");
 
       updateUser({ ...user, avatar_url: data.avatar_url });
-      toast({ title: "Photo updated", description: "Your profile photo has been saved." });
+      toast({ title: t('settings.profile.photoUpdated'), description: t('settings.profile.photoUpdatedDesc') });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({ title: t('settings.profile.photoFailed'), description: err.message, variant: "destructive" });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -287,8 +288,8 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       {/* Identity card */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base">Profile Information</CardTitle>
-          <CardDescription>Update your name, username, and contact details.</CardDescription>
+          <CardTitle className="text-base">{t('settings.profile.title')}</CardTitle>
+          <CardDescription>{t('settings.profile.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar row with upload + crop */}
@@ -342,7 +343,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 onClick={() => avatarInputRef.current?.click()}
                 className="text-xs text-primary hover:underline mt-1 font-medium"
               >
-                {user?.avatar_url ? "Change Photo" : "Upload Photo"}
+                {user?.avatar_url ? t('settings.profile.changePhoto') : t('settings.profile.uploadPhoto')}
               </button>
             </div>
           </div>
@@ -355,7 +356,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 <FormField control={form.control} name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Full Name</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.profile.fullName')}</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Hakim Nazari" className="h-10 rounded-xl" {...field} />
                       </FormControl>
@@ -366,7 +367,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 <FormField control={form.control} name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Username</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.profile.username')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">@</span>
@@ -380,7 +381,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 <FormField control={form.control} name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone (optional)</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.profile.phone')}</FormLabel>
                       <FormControl>
                         <Input placeholder="+90 555 123 4567" className="h-10 rounded-xl" {...field} />
                       </FormControl>
@@ -389,10 +390,10 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                   )}
                 />
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</Label>
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.profile.email')}</Label>
                   <Input value={user?.email || ""} disabled
                     className="h-10 rounded-xl bg-muted/50 cursor-not-allowed opacity-60" />
-                  <p className="text-[10px] text-muted-foreground">Email cannot be changed after registration.</p>
+                  <p className="text-[10px] text-muted-foreground">{t('settings.profile.emailHint')}</p>
                 </div>
               </div>
 
@@ -400,9 +401,9 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 <Button type="submit" disabled={isSaving || !form.formState.isDirty}
                   className={cn("h-10 px-5 rounded-xl font-bold transition-all",
                     saved ? "bg-green-500 hover:bg-green-500" : "gradient-primary hover:opacity-90")}>
-                  {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</>
-                    : saved ? <><Check className="mr-2 h-4 w-4" />Saved!</>
-                      : <><Save className="mr-2 h-4 w-4" />Save Profile</>}
+                  {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('settings.profile.saving')}</>
+                    : saved ? <><Check className="mr-2 h-4 w-4" />{t('settings.profile.saved')}</>
+                      : <><Save className="mr-2 h-4 w-4" />{t('settings.profile.saveProfile')}</>}
                 </Button>
               </div>
             </form>
@@ -413,16 +414,16 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       {/* Regional + Income */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base">Financial &amp; Regional Settings</CardTitle>
-          <CardDescription>Set your monthly income, preferred currency, and language.</CardDescription>
+          <CardTitle className="text-base">{t('settings.profile.regional')}</CardTitle>
+          <CardDescription>{t('settings.profile.regionalDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Income stats — uses PreferencesContext formatAmount so currency updates instantly */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Monthly Income",     value: formatAmount(incomeVal) },
-              { label: "Savings Target 20%", value: formatAmount(Math.round(incomeVal * 0.20)) },
-              { label: "Daily Budget",       value: formatAmount(Math.round(incomeVal / 30)) },
+              { label: t('settings.profile.monthlyIncome'), value: formatAmount(incomeVal) },
+              { label: t('settings.profile.savingsTarget'), value: formatAmount(Math.round(incomeVal * 0.20)) },
+              { label: t('settings.profile.dailyBudget'), value: formatAmount(Math.round(incomeVal / 30)) },
             ].map(({ label, value }) => (
               <div key={label} className="bg-muted/50 border border-border rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -437,7 +438,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Monthly Income ({CURRENCIES[prefs.currency]?.symbol ?? '₺'})
+                      {t('settings.profile.monthlyIncome')} ({CURRENCIES[prefs.currency]?.symbol ?? '₺'})
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
@@ -478,7 +479,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                <CreditCard className="w-3.5 h-3.5" /> Currency
+                <CreditCard className="w-3.5 h-3.5" /> {t('settings.profile.currency')}
               </Label>
               <Select value={prefs.currency} onValueChange={v => updatePref("currency", v)}>
                 <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
@@ -492,7 +493,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                <Globe className="w-3.5 h-3.5" /> Language
+                <Globe className="w-3.5 h-3.5" /> {t('settings.profile.language')}
               </Label>
               <Select value={prefs.language} onValueChange={v => updatePref("language", v)}>
                 <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
@@ -500,7 +501,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="tr">Türkçe</SelectItem>
                   <SelectItem value="de">Deutsch</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
+              <SelectItem value="fr" style={{display:'none'}} aria-hidden>Français</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -509,7 +510,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
           {/* Save button — persists currency + language to UserPreferences table */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <p className="text-xs text-muted-foreground">
-              Currency and language apply instantly and are saved to your account.
+              {t('settings.profile.regionalHint')}
             </p>
             <Button
               type="button"
@@ -518,8 +519,8 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
               className="h-9 px-4 rounded-xl font-bold gradient-primary hover:opacity-90 text-sm"
             >
               {isSavingPrefs
-                ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Saving...</>
-                : <><Save className="mr-2 h-3.5 w-3.5" />Save Regional</>}
+                ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />{t('common.saving')}</>
+                : <><Save className="mr-2 h-3.5 w-3.5" />{t('settings.profile.saveRegional')}</>}
             </Button>
           </div>
         </CardContent>
@@ -533,8 +534,8 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
 function AppearanceTab({ prefs, updatePref, onSave, isSaving, isLoading }: any) {
   const { t } = useTranslation();
   const THEMES = [
-    { value: "light",  label: t('settings.appearance.light'),  icon: Sun,     desc: t('settings.appearance.light_desc')  },
-    { value: "dark",   label: t('settings.appearance.dark'),   icon: Moon,    desc: t('settings.appearance.dark_desc')   },
+    { value: "light", label: t('settings.appearance.light'), icon: Sun, desc: t('settings.appearance.light_desc') },
+    { value: "dark", label: t('settings.appearance.dark'), icon: Moon, desc: t('settings.appearance.dark_desc') },
     { value: "system", label: t('settings.appearance.system'), icon: Monitor, desc: t('settings.appearance.system_desc') },
   ];
 
@@ -601,10 +602,10 @@ function NotificationsTab({ prefs, updatePref, onSave, isSaving, isLoading }: an
   const { t } = useTranslation();
 
   const NOTIF_ITEMS = [
-    { key: "notif_email",         title: t('settings.notifications.email'),         desc: t('settings.notifications.email_desc')         },
-    { key: "notif_budget_alerts", title: t('settings.notifications.budget_alerts'),  desc: t('settings.notifications.budget_alerts_desc')  },
-    { key: "notif_weekly_report", title: t('settings.notifications.weekly_report'),  desc: t('settings.notifications.weekly_report_desc')  },
-    { key: "notif_ai_insights",   title: t('settings.notifications.ai_insights'),    desc: t('settings.notifications.ai_insights_desc')    },
+    { key: "notif_email", title: t('settings.notifications.email'), desc: t('settings.notifications.email_desc') },
+    { key: "notif_budget_alerts", title: t('settings.notifications.budget_alerts'), desc: t('settings.notifications.budget_alerts_desc') },
+    { key: "notif_weekly_report", title: t('settings.notifications.weekly_report'), desc: t('settings.notifications.weekly_report_desc') },
+    { key: "notif_ai_insights", title: t('settings.notifications.ai_insights'), desc: t('settings.notifications.ai_insights_desc') },
   ];
 
   return (
@@ -654,11 +655,12 @@ function NotificationsTab({ prefs, updatePref, onSave, isSaving, isLoading }: an
 // ─── Security Tab ────────────────────────────────────────────────────────────
 
 function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDeletionState }: any) {
+  const { t } = useTranslation();
   const [showCur, setShowCur] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showCon, setShowCon] = useState(false);
-  const [isSaving,   setIsSaving]   = useState(false);
-  const [saved,      setSaved]      = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
   const form = useForm<PasswordValues>({
@@ -666,7 +668,7 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
-  const newPass  = form.watch("newPassword");
+  const newPass = form.watch("newPassword");
   const strength = passwordStrength(newPass);
 
   const onSubmit = async (values: PasswordValues) => {
@@ -680,7 +682,7 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
       form.reset();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      toast({ title: "Password changed", description: "Your new password is active." });
+      toast({ title: t('settings.security.passwordChanged'), description: t('settings.security.passwordChangedDesc') });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -696,8 +698,8 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
       const data = await apiFetch("/auth/account", token, { method: "DELETE" });
       // data.deletion_date is the ISO date when the account will be permanently deleted
       toast({
-        title:       "Account scheduled for deletion",
-        description: `You have 14 days to change your mind. Permanent deletion on ${new Date(data.deletion_date).toLocaleDateString()}.`,
+        title: t('settings.security.deletionScheduled'),
+        description: t('settings.security.deletionScheduledDesc'),
       });
       // Banner will appear automatically — AuthContext's deletionDate is updated on next render
       // by triggering a re-login or by directly updating it. Easiest: store in localStorage.
@@ -718,7 +720,7 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
     try {
       await apiFetch("/auth/account/restore", token, { method: "POST" });
       clearDeletionState?.();
-      toast({ title: "Account Restored!", description: "Your account is active again. Welcome back!" });
+      toast({ title: t('settings.security.restoreAccount'), description: t('settings.security.restoreAccountDesc') });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -731,12 +733,16 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
       {/* Password change */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base">Change Password</CardTitle>
-          <CardDescription>Verify your current password before setting a new one.</CardDescription>
+          <CardTitle className="text-base">{t('settings.security.changePassword')}</CardTitle>
+          <CardDescription>{t('settings.security.changePasswordDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2 mb-5">
-            {["JWT Authentication", "Bcrypt hashing (10 rounds)", "7-day session"].map(b => (
+            {[
+              t('settings.security.securityBadge1'),
+              t('settings.security.securityBadge2'),
+              t('settings.security.securityBadge3'),
+            ].map(b => (
               <Badge key={b} variant="outline" className="gap-1 border-green-500/30 text-green-600 bg-green-500/5 text-xs">
                 <Check className="w-3 h-3" />{b}
               </Badge>
@@ -749,11 +755,11 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
               <FormField control={form.control} name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Current Password</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.security.currentPassword')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input {...field} type={showCur ? "text" : "password"}
-                          placeholder="Enter your current password" className="h-10 rounded-xl pr-10" />
+                          placeholder={t('settings.security.currentPasswordPlaceholder')} className="h-10 rounded-xl pr-10" />
                         <button type="button" onClick={() => setShowCur(v => !v)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                           {showCur ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -771,11 +777,11 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
               <FormField control={form.control} name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">New Password</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.security.newPassword')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input {...field} type={showNew ? "text" : "password"}
-                          placeholder="Min. 6 characters" className="h-10 rounded-xl pr-10" />
+                          placeholder={t('settings.security.newPasswordPlaceholder')} className="h-10 rounded-xl pr-10" />
                         <button type="button" onClick={() => setShowNew(v => !v)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                           {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -795,7 +801,7 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
                                 : "bg-muted")} />
                           ))}
                         </div>
-                        <p className="text-xs text-muted-foreground">Strength: <span className="font-bold">{strength.label}</span></p>
+                        <p className="text-xs text-muted-foreground">{t('settings.security.passwordStrength')} <span className="font-bold">{strength.label}</span></p>
                       </div>
                     )}
                     <FormMessage />
@@ -807,11 +813,11 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
               <FormField control={form.control} name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Confirm New Password</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('settings.security.confirmPassword')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input {...field} type={showCon ? "text" : "password"}
-                          placeholder="Repeat your new password" className="h-10 rounded-xl pr-10" />
+                          placeholder={t('settings.security.confirmPasswordPlaceholder')} className="h-10 rounded-xl pr-10" />
                         <button type="button" onClick={() => setShowCon(v => !v)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                           {showCon ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -827,9 +833,9 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
                 <Button type="submit" disabled={isSaving}
                   className={cn("h-10 px-5 rounded-xl font-bold transition-all",
                     saved ? "bg-green-500 hover:bg-green-500" : "gradient-primary hover:opacity-90")}>
-                  {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Updating…</>
-                    : saved ? <><Check className="mr-2 h-4 w-4" />Changed!</>
-                      : <><Shield className="mr-2 h-4 w-4" />Change Password</>}
+                  {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('settings.security.updating')}</>
+                    : saved ? <><Check className="mr-2 h-4 w-4" />{t('settings.security.changed')}</>
+                      : <><Shield className="mr-2 h-4 w-4" />{t('settings.security.updatePassword')}</>}
                 </Button>
               </div>
             </form>
@@ -843,13 +849,13 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
           <div className="flex items-center gap-2">
             <AlertTriangle className={`w-4 h-4 ${deletionDate ? "text-amber-500" : "text-destructive"}`} />
             <CardTitle className={`text-base ${deletionDate ? "text-amber-600 dark:text-amber-400" : "text-destructive"}`}>
-              {deletionDate ? "Account Pending Deletion" : "Danger Zone"}
+              {deletionDate ? t('settings.security.dangerZoneActive') : t('settings.security.dangerZone')}
             </CardTitle>
           </div>
           <CardDescription>
             {deletionDate
-              ? `Your account is scheduled for permanent deletion on ${new Date(deletionDate).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}. You can restore it anytime before that date.`
-              : "Irreversible actions. Read carefully before proceeding."}
+              ? t('settings.security.dangerZoneActiveDesc')
+              : t('settings.security.dangerZoneDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -857,11 +863,11 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
           {/* Sign out */}
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-semibold text-foreground">Sign Out</p>
-              <p className="text-xs text-muted-foreground">End your current session. Data stays intact.</p>
+              <p className="text-sm font-semibold text-foreground">{t('settings.security.signOut')}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.security.signOutDesc')}</p>
             </div>
             <Button variant="outline" size="sm" onClick={logout} className="rounded-lg gap-1.5">
-              <LogOut className="w-3.5 h-3.5" /> Sign Out
+              <LogOut className="w-3.5 h-3.5" /> {t('settings.security.signOut')}
             </Button>
           </div>
 
@@ -871,9 +877,9 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
             /* ── Account is already scheduled for deletion: show restore UI ── */
             <div className="flex items-center justify-between py-2">
               <div>
-                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Restore Your Account</p>
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">{t('settings.security.restoreAccount')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Click Restore to cancel the deletion and keep all your data.
+                  {t('settings.security.restoreAccountDesc')}
                 </p>
               </div>
               <Button
@@ -884,47 +890,40 @@ function SecurityTab({ token, toast, logout, queryClient, deletionDate, clearDel
               >
                 {isClearing
                   ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : <><RotateCcw className="w-3.5 h-3.5" /> Restore</>}
+                  : <><RotateCcw className="w-3.5 h-3.5" /> {t('settings.security.restore')}</>}
               </Button>
             </div>
           ) : (
             /* ── Normal state: delete account ── */
             <div className="flex items-center justify-between py-2">
               <div>
-                <p className="text-sm font-semibold text-destructive">Delete Account</p>
+                <p className="text-sm font-semibold text-destructive">{t('settings.security.deleteAccount')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Schedules deletion. You have 14 days to restore before data is removed.
+                  {t('settings.security.deleteAccountDesc')}
                 </p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={isClearing} className="rounded-lg gap-1.5">
                     {isClearing ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : <><Trash2 className="w-3.5 h-3.5" />Delete</>}
+                      : <><Trash2 className="w-3.5 h-3.5" />{t('settings.security.deleteAccount')}</>}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-destructive flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5" /> Delete your account?
+                      <AlertTriangle className="w-5 h-5" /> {t('settings.security.deleteDialogTitle')}
                     </AlertDialogTitle>
                     <AlertDialogDescription className="space-y-2">
-                      <span className="block">
-                        Your account will be <strong>scheduled for deletion</strong>. You will have a
-                        {" "}<strong>14-day grace period</strong> during which you can log back in and
-                        restore your account at any time.
-                      </span>
-                      <span className="block text-destructive font-medium">
-                        After 14 days, your account, all expenses, preferences, and group memberships
-                        will be permanently and irrecoverably removed.
-                      </span>
+                      <span className="block">{t('settings.security.deleteDialogDesc1')}</span>
+                      <span className="block text-destructive font-medium">{t('settings.security.deleteDialogDesc2')}</span>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteAccount}
                       className="bg-destructive hover:bg-destructive/90">
-                      Schedule Deletion
+                      {t('settings.security.scheduleDeletion')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

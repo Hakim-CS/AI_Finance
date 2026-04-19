@@ -44,7 +44,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
   const getCategoryInfo = (categoryId: string) => {
     if (categoriesLoading) return { name: t("common.loading"), icon: "MoreHorizontal", color: "#ccc" };
     if (categoriesError) return { name: t("common.error"), icon: "MoreHorizontal", color: "#f00" };
-    return categories?.find(c => c.id === categoryId) || { name: t("expenses.unknown_category"), icon: "MoreHorizontal", color: "#666" };
+    return categories?.find(c => c.id === categoryId) || { name: t("expensesPage.unknownCategory"), icon: "MoreHorizontal", color: "#666" };
   };
 
   const formatDate = (dateStr: string) =>
@@ -52,7 +52,7 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
 
   const handleDelete = async (expenseId: string) => {
     if (!token) {
-      toast({ title: t("common.error"), description: t("expenses.login_required"), variant: "destructive" });
+      toast({ title: t("common.error"), description: t("expensesPage.loginRequired"), variant: "destructive" });
       return;
     }
     try {
@@ -62,12 +62,12 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || t("expenses.delete_failed"));
+        throw new Error(errorData.message || t("expensesPage.deleteFailed"));
       }
-      toast({ title: t("expenses.deleted_title"), description: t("expenses.deleted_desc") });
+      toast({ title: t("expensesPage.deletedTitle"), description: t("expensesPage.deletedDesc") });
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (error: any) {
-      toast({ title: t("expenses.delete_failed"), description: error.message, variant: "destructive" });
+      toast({ title: t("expensesPage.deleteFailed"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -82,8 +82,8 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
           <ShoppingBag className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-1">{t("expenses.no_expenses")}</h3>
-        <p className="text-muted-foreground">{t("expenses.no_expenses_hint")}</p>
+        <h3 className="text-lg font-semibold text-foreground mb-1">{t("expensesPage.noFound")}</h3>
+        <p className="text-muted-foreground">{t("expensesPage.noFoundDesc")}</p>
       </Card>
     );
   }
@@ -114,8 +114,8 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("expenses.delete_confirm_title")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("expenses.delete_confirm_desc")}</AlertDialogDescription>
+          <AlertDialogTitle>{t("expensesPage.deleteConfirmTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("expensesPage.deleteConfirmDesc")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
@@ -132,11 +132,11 @@ export function ExpenseTable({ expenses }: ExpenseTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>{t("expenses.date")}</TableHead>
-              <TableHead>{t("expenses.category")}</TableHead>
-              <TableHead>{t("expenses.description")}</TableHead>
-              <TableHead className="text-right">{t("expenses.amount")}</TableHead>
-              <TableHead className="text-right">{t("expenses.actions")}</TableHead>
+              <TableHead>{t("expensesPage.thDate")}</TableHead>
+              <TableHead>{t("expensesPage.thCategory")}</TableHead>
+              <TableHead>{t("expensesPage.thDescription")}</TableHead>
+              <TableHead className="text-right">{t("expensesPage.thAmount")}</TableHead>
+              <TableHead className="text-right">{t("expensesPage.thActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

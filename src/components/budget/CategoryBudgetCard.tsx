@@ -3,6 +3,8 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Edit2, Utensils, Car, ShoppingBag, Gamepad2, Zap, Heart, GraduationCap, CreditCard } from "lucide-react";
 import { BudgetCategory, formatCurrency, getSpentPercentage } from "@/data/budgetData";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Utensils,
@@ -21,10 +23,12 @@ interface CategoryBudgetCardProps {
 }
 
 export function CategoryBudgetCard({ category, onEdit }: CategoryBudgetCardProps) {
-  const percentage = getSpentPercentage(category.spent, category.allocated);
+  const percentage   = getSpentPercentage(category.spent, category.allocated);
   const isOverBudget = percentage >= 100;
-  const isWarning = percentage >= 80 && percentage < 100;
-  const remaining = category.allocated - category.spent;
+  const isWarning    = percentage >= 80 && percentage < 100;
+  const remaining    = category.allocated - category.spent;
+  const { t }        = useTranslation();
+  const { formatAmount } = usePreferences();
 
   const IconComponent = iconMap[category.icon] || CreditCard;
 
@@ -51,7 +55,7 @@ export function CategoryBudgetCard({ category, onEdit }: CategoryBudgetCardProps
             <div>
               <h3 className="font-medium text-foreground">{category.name}</h3>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(category.spent)} of {formatCurrency(category.allocated)}
+                {formatAmount(category.spent)} {t("common.of")} {formatAmount(category.allocated)}
               </p>
             </div>
           </div>
@@ -81,8 +85,8 @@ export function CategoryBudgetCard({ category, onEdit }: CategoryBudgetCardProps
             <span className={`text-xs ${
               remaining < 0 ? 'text-destructive' : 'text-muted-foreground'
             }`}>
-              {remaining < 0 ? 'Over by ' : 'Left: '}
-              {formatCurrency(Math.abs(remaining))}
+              {remaining < 0 ? t("budgetPage.overBudget") : t("budgetPage.leftBy")}
+              {' '}{formatAmount(Math.abs(remaining))}
             </span>
           </div>
         </div>

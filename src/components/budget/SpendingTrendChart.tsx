@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 interface TrendData {
   month: string;
@@ -14,7 +16,9 @@ interface TrendData {
 export function SpendingTrendChart() {
   const [data, setData] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
+  const { token }       = useAuth();
+  const { t }           = useTranslation();
+  const { formatAmount } = usePreferences();
 
   useEffect(() => {
     const fetchTrend = async () => {
@@ -45,7 +49,7 @@ export function SpendingTrendChart() {
   return (
     <Card className="border-slate-100 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-slate-800">Monthly Spending Trend</CardTitle>
+        <CardTitle className="text-xl font-bold text-slate-800">{t("dashboard.spendingTrends")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[350px] w-full mt-4">
@@ -84,11 +88,11 @@ export function SpendingTrendChart() {
                         <div className="space-y-1">
                           <p className="text-emerald-600 font-bold flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            Budget: ₺{payload[0].value?.toLocaleString()}
+                          Budget: {formatAmount(Number(payload[0].value ?? 0))}
                           </p>
                           <p className="text-violet-600 font-bold flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-violet-500" />
-                            Spent: ₺{payload[1].value?.toLocaleString()}
+                          Spent: {formatAmount(Number(payload[1].value ?? 0))}
                           </p>
                         </div>
                       </div>
@@ -106,7 +110,7 @@ export function SpendingTrendChart() {
               <Area 
                 type="monotone" 
                 dataKey="budget" 
-                name="Budget"
+                name={t("budgetPage.totalBudget")}
                 stroke="#10b981" 
                 strokeWidth={3}
                 fillOpacity={1} 
@@ -117,7 +121,7 @@ export function SpendingTrendChart() {
               <Area 
                 type="monotone" 
                 dataKey="spent" 
-                name="Spent"
+                name={t("budgetPage.totalSpent")}
                 stroke="#8b5cf6" 
                 strokeWidth={3}
                 fillOpacity={1} 

@@ -30,10 +30,9 @@ export const CURRENCIES: Record<string, { symbol: string; locale: string; label:
 };
 
 export const LANGUAGES: Record<string, { label: string; locale: string }> = {
-  en: { label: "English",  locale: "en" },
-  tr: { label: "Türkçe",   locale: "tr" },
-  de: { label: "Deutsch",  locale: "de" },
-  fr: { label: "Français", locale: "fr" },
+  en: { label: "English", locale: "en" },
+  tr: { label: "Türkçe",  locale: "tr" },
+  de: { label: "Deutsch", locale: "de" },
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────

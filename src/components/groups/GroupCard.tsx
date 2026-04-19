@@ -6,6 +6,8 @@ import { getTotalGroupExpenses, getUserBalance } from "@/data/groupsData";
 import { cn } from "@/lib/utils";
 import { Group } from "@/hooks/useGroups";
 import { useAuth } from "@/context/AuthContext";
+import { usePreferences } from "@/context/PreferencesContext";
+import { useTranslation } from "react-i18next";
 
 interface GroupCardProps {
   group: Group;
@@ -14,6 +16,8 @@ interface GroupCardProps {
 
 export function GroupCard({ group, onClick }: GroupCardProps) {
   const { user } = useAuth();
+  const { formatAmount } = usePreferences();
+  const { t } = useTranslation();
   const totalExpenses = getTotalGroupExpenses(group as any);
   const userBalance = user ? getUserBalance(group as any, user.id.toString()) : 0;
 
@@ -55,28 +59,28 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
               )}
             </div>
             <span className="text-sm text-muted-foreground">
-              {group.members.length} members
+              {group.members.length} {t('common.members')}
             </span>
           </div>
 
           {/* Stats */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <div>
-              <p className="text-xs text-muted-foreground">Total expenses</p>
-              <p className="font-semibold">₺{totalExpenses.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">{t('common.total')} {t('nav.expenses')}</p>
+              <p className="font-semibold text-foreground">{formatAmount(totalExpenses)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Your balance</p>
+              <p className="text-xs text-muted-foreground">{t('groups.yourBalance')}</p>
               <Badge
                 variant="secondary"
                 className={cn(
                   "font-semibold",
-                  userBalance > 0 && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                  userBalance < 0 && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                  userBalance > 0 && "bg-success/10 text-success dark:bg-success/20",
+                  userBalance < 0 && "bg-destructive/10 text-destructive dark:bg-destructive/20",
                   userBalance === 0 && "bg-muted text-muted-foreground"
                 )}
               >
-                {userBalance > 0 ? "+" : ""}{userBalance === 0 ? "Settled" : `₺${userBalance.toFixed(2)}`}
+                {userBalance > 0 ? "+" : ""}{userBalance === 0 ? t('common.settled') : formatAmount(Math.abs(userBalance))}
               </Badge>
             </div>
           </div>

@@ -13,10 +13,11 @@ import { AlertTriangle, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 function formatCountdown(target: Date): string {
   const diff = target.getTime() - Date.now();
-  if (diff <= 0) return "0 days";
+  if (diff <= 0) return "0d";
   const days  = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   if (days > 0) return `${days}d ${hours}h`;
@@ -27,6 +28,7 @@ function formatCountdown(target: Date): string {
 export function DeletionBanner() {
   const { token, deletionDate, clearDeletionState, logout } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [restoring,  setRestoring]  = useState(false);
   const [countdown,  setCountdown]  = useState("");
 
@@ -57,11 +59,11 @@ export function DeletionBanner() {
       if (!res.ok) throw new Error(data.message || "Restore failed");
       clearDeletionState();
       toast({
-        title:       "Account Restored!",
-        description: "Your account has been successfully restored. Welcome back!",
+        title:       t('settings.security.restoreAccount'),
+        description: t('settings.security.restoreAccountDesc'),
       });
     } catch (e: any) {
-      toast({ title: "Restore Failed", description: e.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: e.message, variant: "destructive" });
     } finally {
       setRestoring(false);
     }
@@ -72,15 +74,15 @@ export function DeletionBanner() {
       <div className="flex items-start sm:items-center gap-2.5">
         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
         <div className="text-sm">
-          <span className="font-bold">Account scheduled for deletion.</span>{" "}
+          <span className="font-bold">{t('settings.security.deletionScheduled')}.</span>{" "}
           {isExpired ? (
-            <span>The grace period has expired. Contact support to recover your data.</span>
+            <span>{t('banner.graceExpired')}</span>
           ) : (
             <span>
-              Permanently deleted in{" "}
+              {t('banner.deletingIn')}{" "}
               <span className="font-mono font-black underline underline-offset-2">{countdown}</span>
               {" "}({deletionTarget.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}).
-              {" "}Restore now to keep your account.
+              {" "}{t('banner.restoreNow')}
             </span>
           )}
         </div>
@@ -96,8 +98,8 @@ export function DeletionBanner() {
             disabled={restoring}
           >
             {restoring
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Restoring…</>
-              : <><RotateCcw className="w-3.5 h-3.5" /> Restore Account</>
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('settings.security.restoring')}</>
+              : <><RotateCcw className="w-3.5 h-3.5" /> {t('settings.security.restore')}</>
             }
           </Button>
         )}
@@ -107,7 +109,7 @@ export function DeletionBanner() {
           className="h-8 rounded-lg text-white hover:bg-amber-600/50 font-bold text-xs"
           onClick={logout}
         >
-          Sign Out
+          {t('settings.security.signOut')}
         </Button>
       </div>
     </div>

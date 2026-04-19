@@ -24,7 +24,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
   const recentExpenses = expenses.slice(0, 5);
 
   const getCategoryInfo = (categoryId: string) =>
-    categories?.find(c => c.id === categoryId) || { name: t("expenses.unknown_category"), icon: "MoreHorizontal", color: "#666" };
+    categories?.find(c => c.id === categoryId) || { name: t("expensesPage.categoryPlaceholder"), icon: "MoreHorizontal", color: "#666" };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -56,10 +56,10 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{t("dashboard.recent_transactions")}</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t("dashboard.recentTransactions")}</CardTitle>
           <Button variant="ghost" size="sm" asChild>
             <Link to="/expenses" className="text-primary hover:text-primary/80">
-              {t("dashboard.view_all")}
+              {t("common.viewAll")}
             </Link>
           </Button>
         </div>
@@ -68,7 +68,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
         <div className="divide-y divide-border">
           {recentExpenses.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              {t("dashboard.no_transactions")}
+              {t("expensesPage.noFound")}
             </div>
           ) : (
             recentExpenses.map((expense, index) => {
@@ -84,7 +84,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                     <Icon className="w-5 h-5" style={{ color: category.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{expense.description || t("expenses.no_description")}</p>
+                    <p className="font-medium text-foreground truncate">{expense.description || t("expensesPage.noFound")}</p>
                     <p className="text-sm text-muted-foreground">{category.name}</p>
                   </div>
                   <div className="text-right flex-shrink-0">

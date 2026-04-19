@@ -83,7 +83,7 @@ export default function Expenses() {
     return (
       <Card className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="ml-2">{t('expenses.loading')}</p>
+        <p className="ml-2">{t('expensesPage.loading')}</p>
       </Card>
     );
   }
@@ -93,7 +93,7 @@ export default function Expenses() {
       <Card className="p-8 text-center text-destructive">
         <h1 className="text-xl font-bold">{t('common.error')}</h1>
         <p className="text-muted-foreground mt-1">
-          {t('expenses.load_error')}: {error?.message}
+          {t('expensesPage.loadError')}: {error?.message}
         </p>
       </Card>
     );
@@ -105,13 +105,13 @@ export default function Expenses() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('expenses.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('expenses.description')}</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('expensesPage.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('expensesPage.subtitle')}</p>
         </div>
         <Button asChild className="gradient-primary hover:opacity-90">
           <Link to="/add-expense">
             <Plus className="w-4 h-4 mr-2" />
-            {t('expenses.add')}
+            {t('expensesPage.addExpense')}
           </Link>
         </Button>
       </div>
@@ -132,10 +132,10 @@ export default function Expenses() {
       {/* Summary */}
       <div className="flex items-center justify-between text-sm">
         <p className="text-muted-foreground">
-          {t('expenses.showing')} <span className="font-medium text-foreground">{filteredExpenses.length}</span> {t('expenses.expenses_count')}
+          {t('expensesPage.showing')} <span className="font-medium text-foreground">{filteredExpenses.length}</span> {t('expensesPage.expensesCount')}
         </p>
         <p className="text-muted-foreground">
-          {t('expenses.total')}: <span className="font-semibold text-primary">{formatAmount(totalAmount)}</span>
+          {t('expensesPage.totalLabel')}: <span className="font-semibold text-primary">{formatAmount(totalAmount)}</span>
         </p>
       </div>
 

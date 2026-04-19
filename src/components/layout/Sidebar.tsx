@@ -45,12 +45,12 @@ export function Sidebar({ isOpen, onClose, onToggleCollapse, isCollapsed = false
   const { t }            = useTranslation();
 
   const navItems = [
-    { path: "/",            label: t("nav.dashboard"),   icon: LayoutDashboard },
-    { path: "/add-expense", label: t("nav.add_expense"), icon: Plus            },
-    { path: "/expenses",    label: t("nav.expenses"),    icon: List            },
-    { path: "/groups",      label: t("nav.groups"),      icon: Users           },
-    { path: "/budget",      label: t("nav.budget"),      icon: PiggyBank       },
-    { path: "/settings",    label: t("nav.settings"),    icon: Settings        },
+    { path: "/",            label: t("nav.dashboard"),  icon: LayoutDashboard },
+    { path: "/add-expense", label: t("nav.addExpense"), icon: Plus            },
+    { path: "/expenses",    label: t("nav.expenses"),   icon: List            },
+    { path: "/groups",      label: t("nav.groups"),     icon: Users           },
+    { path: "/budget",      label: t("nav.budget"),     icon: PiggyBank       },
+    { path: "/settings",    label: t("nav.settings"),   icon: Settings        },
   ];
 
   const displayName  = user?.name || user?.username || user?.email || "Guest User";

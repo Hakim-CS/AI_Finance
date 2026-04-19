@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { CategoryChart } from "@/components/dashboard/CategoryChart";
@@ -21,11 +21,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
-// Month values kept in English for API/filter logic; display label uses t()
-const MONTH_KEYS = [
-  "january","february","march","april","may","june",
-  "july","august","september","october","november","december"
-];
+// EN_MONTHS drives filter logic; display label is looked up via t('months.January') etc.
 const EN_MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December"
@@ -39,14 +35,8 @@ interface ChartCategoryData {
 }
 
 const DEFAULT_BUDGETS: Record<string, number> = {
-  food: 3000,
-  transport: 1500,
-  shopping: 2000,
-  entertainment: 1000,
-  utilities: 2500,
-  health: 1000,
-  travel: 5000,
-  other: 500
+  food: 3000, transport: 1500, shopping: 2000, entertainment: 1000,
+  utilities: 2500, health: 1000, travel: 5000, other: 500,
 };
 
 export default function Dashboard() {
@@ -58,24 +48,24 @@ export default function Dashboard() {
   const { t } = useTranslation();
 
   const [selectedMonth, setSelectedMonth] = useState(EN_MONTHS[new Date().getMonth()]);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear,  setSelectedYear]  = useState(new Date().getFullYear());
 
   const isLoading = isCatsLoading || isExpensesLoading || isBudgetLoading;
 
-  // --- START REAL-TIME CALCULATIONS ---
-  const monthlyIncome = Number(user?.income) || 0; 
+  // ── Real-time calculations ────────────────────────────────────────────────
+  const monthlyIncome = Number(user?.income) || 0;
   const monthIdx = EN_MONTHS.indexOf(selectedMonth);
-  
+
   const currentMonthExpenses = expenses?.filter(e => {
     const d = new Date(e.date);
     return d.getMonth() === monthIdx && d.getFullYear() === selectedYear;
   }) || [];
 
   const monthlyExpensesTotal = currentMonthExpenses.reduce((acc, e) => acc + e.amount, 0);
-
-  const totalBalance = monthlyIncome - monthlyExpensesTotal;
-  const savingsRate = monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100) : 0;
-  // --- END REAL-TIME CALCULATIONS ---
+  const totalBalance  = monthlyIncome - monthlyExpensesTotal;
+  const savingsRate   = monthlyIncome > 0
+    ? Math.round(((monthlyIncome - monthlyExpensesTotal) / monthlyIncome) * 100)
+    : 0;
 
   const getAggregatedCategoryData = (): ChartCategoryData[] => {
     if (!categories || !expenses) return [];
@@ -85,22 +75,13 @@ export default function Dashboard() {
     }, {} as Record<string, number>);
     return categories
       .filter(cat => categoryTotals[cat.id])
-      .map(cat => ({
-        name: cat.name,
-        value: categoryTotals[cat.id],
-        color: cat.color || "#000",
-        icon: cat.icon,
-      }));
+      .map(cat => ({ name: cat.name, value: categoryTotals[cat.id], color: cat.color || "#000", icon: cat.icon }));
   };
 
   const getBudgetStatusData = () => {
     if (!categories || !expenses) return [];
-    
-    // Map current limits from DB, fallback to DEFAULT_BUDGETS if not set
     const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
-    budgetLimits?.forEach(limit => {
-      currentLimits[limit.categoryId] = Number(limit.limitAmount);
-    });
+    budgetLimits?.forEach(limit => { currentLimits[limit.categoryId] = Number(limit.limitAmount); });
 
     const monthlyCategoryTotals = currentMonthExpenses.reduce((acc, expense) => {
       acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
@@ -108,25 +89,19 @@ export default function Dashboard() {
     }, {} as Record<string, number>);
 
     return categories
-      .map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        allocated: currentLimits[cat.id] || 0,
-        spent: monthlyCategoryTotals[cat.id] || 0,
-        color: cat.color || "#000"
-      }))
-      .filter(cat => cat.allocated > 0) // Only show categories that have a budget
+      .map(cat => ({ id: cat.id, name: cat.name, allocated: currentLimits[cat.id] || 0, spent: monthlyCategoryTotals[cat.id] || 0, color: cat.color || "#000" }))
+      .filter(cat => cat.allocated > 0)
       .sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated));
   };
 
-  const categoryData = getAggregatedCategoryData();
+  const categoryData    = getAggregatedCategoryData();
   const budgetStatusData = getBudgetStatusData();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="ml-2">{t('dashboard.loading')}</p>
+        <p className="ml-2">{t('common.loading')}</p>
       </div>
     );
   }
@@ -139,24 +114,26 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('dashboard.welcome')}{displayName ? (
-            <>, <span className="font-bold text-foreground">{displayName}</span></>
-          ) : ''}<span className="font-bold text-foreground">!</span> {t('dashboard.overview')}</p>
+          <p className="text-muted-foreground mt-1">
+            {t('dashboard.welcome')}
+            {displayName ? <>, <span className="font-bold text-foreground">{displayName}</span></> : ''}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 mr-2">
+            {/* Month selector — value stays English for filter logic; display is translated */}
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EN_MONTHS.map((month, i) => (
-                  <SelectItem key={month} value={month}>{t(`months.${MONTH_KEYS[i]}`)}</SelectItem>
+                {EN_MONTHS.map(month => (
+                  <SelectItem key={month} value={month}>{t(`months.${month}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+            <Select value={selectedYear.toString()} onValueChange={v => setSelectedYear(parseInt(v))}>
               <SelectTrigger className="w-[100px]">
                 <SelectValue />
               </SelectTrigger>
@@ -170,7 +147,7 @@ export default function Dashboard() {
           <Button asChild className="gradient-primary hover:opacity-90 transition-opacity">
             <Link to="/add-expense">
               <Plus className="w-4 h-4 mr-2" />
-              {t('dashboard.add_expense')}
+              {t('nav.addExpense')}
             </Link>
           </Button>
         </div>
@@ -178,10 +155,10 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <SummaryCard title={t('dashboard.total_balance')}    value={formatAmount(totalBalance)}         icon={Wallet}      variant="primary" />
-        <SummaryCard title={t('dashboard.monthly_income')}   value={formatAmount(monthlyIncome)}        icon={TrendingUp}  action={<EditIncomeDialog />} />
-        <SummaryCard title={t('dashboard.monthly_expenses')} value={formatAmount(monthlyExpensesTotal)} icon={TrendingDown} trend={{ value: 0, isPositive: true }} />
-        <SummaryCard title={t('dashboard.savings_rate')}     value={`${savingsRate}%`}                 icon={PiggyBank}   trend={{ value: 0, isPositive: true }} />
+        <SummaryCard title={t('dashboard.totalBalance')}    value={formatAmount(totalBalance)}         icon={Wallet}      variant="primary" />
+        <SummaryCard title={t('dashboard.monthlyIncome')}   value={formatAmount(monthlyIncome)}        icon={TrendingUp}  action={<EditIncomeDialog />} />
+        <SummaryCard title={t('dashboard.monthlyExpenses')} value={formatAmount(monthlyExpensesTotal)} icon={TrendingDown} trend={{ value: 0, isPositive: true }} />
+        <SummaryCard title={t('dashboard.savingsRate')}     value={`${savingsRate}%`}                  icon={PiggyBank}   trend={{ value: 0, isPositive: true }} />
       </div>
 
       <AIFeatureHighlight expenses={expenses || []} />

@@ -5,6 +5,7 @@ import { AIBadge } from "./AIBadge";
 import { AIInsightCard } from "./AIInsightCard";
 import { Brain, Sparkles, Activity, BarChart3, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 interface Insight {
   type: "prediction" | "warning" | "tip" | "achievement" | "trend" | "action";
@@ -18,9 +19,10 @@ interface Insight {
 
 export function AIInsightsPanel() {
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
   const { token } = useAuth();
+  const { t }     = useTranslation();
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -50,7 +52,7 @@ export function AIInsightsPanel() {
       <Card className="border-primary/20 gradient-ai-subtle h-[300px] flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
         <p className="text-sm text-muted-foreground animate-pulse font-medium">
-          Our AI is analyzing your financial patterns...
+          {t("dashboard.aiAnalyzing")}
         </p>
       </Card>
     );
@@ -60,9 +62,9 @@ export function AIInsightsPanel() {
     return (
       <Card className="border-destructive/20 h-[300px] flex flex-col items-center justify-center p-6 text-center">
         <AlertCircle className="w-10 h-10 text-destructive mb-3" />
-        <h3 className="font-semibold text-foreground">Insights Unavailable</h3>
+        <h3 className="font-semibold text-foreground">{t("ai.spendingAnalysis")}</h3>
         <p className="text-xs text-muted-foreground mt-2 max-w-[300px]">
-          We couldn't reach the AI analysis engine. Please check your connection or try again later.
+          {t("ai.allCaughtUp")}
         </p>
       </Card>
     );
@@ -78,11 +80,11 @@ export function AIInsightsPanel() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                AI Financial Insights
+                {t("dashboard.aiInsightsTitle")}
                 <AIBadge variant="inline" />
               </div>
               <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                Real-time analysis of your financial behavior
+                {t("dashboard.aiInsightsSubtitle")}
               </p>
             </div>
           </CardTitle>
@@ -90,11 +92,11 @@ export function AIInsightsPanel() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50">
               <Activity className="w-4 h-4 text-success animate-pulse" />
-              <span className="text-xs font-medium text-muted-foreground">Live Analysis</span>
+              <span className="text-xs font-medium text-muted-foreground">{t("ai.active")}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/50">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground">{insights.length} insights</span>
+              <span className="text-xs font-medium text-muted-foreground">{t("ai.newInsightsCount", { count: insights.length })}</span>
             </div>
           </div>
         </div>
@@ -103,7 +105,7 @@ export function AIInsightsPanel() {
         {insights.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-20" />
-            <p className="text-sm font-medium">Add more transactions to generate deeper AI insights.</p>
+            <p className="text-sm font-medium">{t("dashboard.aiAnalyzing")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -126,13 +128,11 @@ export function AIInsightsPanel() {
               <div className="w-2 h-2 rounded-full bg-success animate-pulse" style={{ animationDelay: "150ms" }} />
               <div className="w-2 h-2 rounded-full bg-success animate-pulse" style={{ animationDelay: "300ms" }} />
             </div>
-            <span className="text-xs text-muted-foreground">
-              Deep Neural Network model active and processing
-            </span>
+            <span className="text-xs text-muted-foreground">{t("ai.active")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Last updated just now</span>
+            <span className="text-xs text-muted-foreground">{t("ai.today")}</span>
           </div>
         </div>
       </CardContent>

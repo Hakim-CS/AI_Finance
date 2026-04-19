@@ -17,11 +17,6 @@ import { useExpenses } from "@/hooks/useExpenses";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
-// Internal English values used for filter logic
-const MONTH_KEYS = [
-  "january","february","march","april","may","june",
-  "july","august","september","october","november","december"
-];
 const EN_MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December"
@@ -149,8 +144,8 @@ export default function Budget() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('budget.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('budget.description')}</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('budgetPage.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('budgetPage.subtitle')}</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -164,7 +159,7 @@ export default function Budget() {
               </SelectTrigger>
               <SelectContent className="bg-popover">
                 {EN_MONTHS.map((month, i) => (
-                  <SelectItem key={month} value={month}>{t(`months.${MONTH_KEYS[i]}`)}</SelectItem>
+                  <SelectItem key={month} value={month}>{t(`months.${month}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -191,13 +186,13 @@ export default function Budget() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{t('budget.category_budgets')}</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('budgetPage.categoryBudgets')}</CardTitle>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/5 text-primary"
               onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
-              <Sparkles className="h-4 w-4" /> {t('budget.optimize_ai')}
+              <Sparkles className="h-4 w-4" /> {t('ai.budgetPredictions')}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> {t('budget.manage')}</Button>
+            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> {t('budgetPage.manageCategories')}</Button>
           </div>
         </CardHeader>
         <CardContent>

@@ -6,6 +6,7 @@ import { Sparkles, ArrowRight, Check, Loader2, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { BudgetCategory } from "@/data/budgetData";
+import { useTranslation } from "react-i18next";
 
 interface AIBudgetOptimizerProps {
   currentCategories: BudgetCategory[];
@@ -15,23 +16,22 @@ interface AIBudgetOptimizerProps {
 export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimizerProps) {
   const [optimizedData, setOptimizedData] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen]   = useState(false);
   const { token } = useAuth();
   const { toast } = useToast();
+  const { t }     = useTranslation();
 
   const handleOptimize = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE}/budget/optimize`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (!response.ok) throw new Error("AI Optimization failed");
-      
+      if (!response.ok) throw new Error(t("common.error"));
       const data = await response.json();
       setOptimizedData(data);
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
       onApply(optimizedData);
       setIsOpen(false);
       setOptimizedData(null);
-      toast({ title: "Applied", description: "Your budget has been updated based on AI suggestions." });
+      toast({ title: t("ai.budgetOptimizer"), description: t("settings.toasts.preferencesSavedDesc") });
     }
   };
 
@@ -57,12 +57,9 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
             <div className="p-2 rounded-lg gradient-ai">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
-            <DialogTitle className="text-xl">AI Budget Optimizer</DialogTitle>
+            <DialogTitle className="text-xl">{t("ai.budgetOptimizer")}</DialogTitle>
           </div>
-          <DialogDescription>
-            Our Gradient Boosted Tree model has analyzed your profile. 
-            Review the suggested adjustments below to reach optimal savings.
-          </DialogDescription>
+          <DialogDescription>{t("ai.budgetOptimizerDesc")}</DialogDescription>
         </DialogHeader>
 
         {!optimizedData && !loading && (
@@ -71,17 +68,19 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <div className="max-w-[300px] space-y-2">
-              <p className="font-medium">Ready to Optimize?</p>
-              <p className="text-sm text-muted-foreground">This will use machine learning to calculate the best limits for your 8 categories.</p>
+              <p className="font-medium">{t("ai.readyToOptimize")}</p>
+              <p className="text-sm text-muted-foreground">{t("ai.readyToOptimizeDesc")}</p>
             </div>
-            <Button onClick={handleOptimize} className="gradient-primary px-8">Run AI Engine</Button>
+            <Button onClick={handleOptimize} className="gradient-primary px-8">
+              {t("ai.runAnalysis")}
+            </Button>
           </div>
         )}
 
         {loading && (
           <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground animate-pulse">Running Gradient Boosted Trees...</p>
+            <p className="text-sm text-muted-foreground animate-pulse">{t("dashboard.aiAnalyzing")}</p>
           </div>
         )}
 
@@ -92,7 +91,6 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
                 const suggested = optimizedData[cat.id.toLowerCase()];
                 if (suggested === undefined) return null;
                 const isSaving = suggested < cat.allocated;
-
                 return (
                   <div key={cat.id} className="p-3 rounded-xl bg-muted/50 border border-border/50 flex justify-between items-center">
                     <div className="space-y-0.5">
@@ -103,27 +101,24 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
                         <span className="text-sm font-bold">₺{suggested.toFixed(0)}</span>
                       </div>
                     </div>
-                    <div className={`text-[10px] font-bold px-2 py-1 rounded-full ${isSaving ? 'bg-green-500/10 text-green-600' : 'bg-primary/10 text-primary'}`}>
-                      {isSaving ? 'OPTIMIZE' : 'MAINTAIN'}
+                    <div className={`text-[10px] font-bold px-2 py-1 rounded-full ${isSaving ? "bg-green-500/10 text-green-600" : "bg-primary/10 text-primary"}`}>
+                      {isSaving ? t("ai.optimize") : t("ai.maintain")}
                     </div>
                   </div>
                 );
               })}
             </div>
-            
             <div className="bg-primary/5 p-3 rounded-lg flex gap-3 items-start border border-primary/10">
               <Info className="w-4 h-4 text-primary mt-0.5" />
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                The model suggests a balanced redistribution of funds to ensure essential categories remain covered while optimizing discretionary spending.
-              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{t("ai.budgetOptimizerNote")}</p>
             </div>
           </div>
         )}
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>{t("common.cancel")}</Button>
           <Button onClick={handleApply} disabled={!optimizedData} className="gradient-primary">
-            <Check className="w-4 h-4 mr-2" /> Apply Suggestions
+            <Check className="w-4 h-4 mr-2" /> {t("ai.applySuggestions")}
           </Button>
         </DialogFooter>
       </DialogContent>

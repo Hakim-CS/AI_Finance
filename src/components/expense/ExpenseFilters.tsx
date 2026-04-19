@@ -33,8 +33,8 @@ export function ExpenseFilters({
 
   const getCategoryName = (categoryId: string) => {
     if (isLoading) return t("common.loading");
-    if (isError) return t("common.error");
-    return categories?.find(c => c.id === categoryId)?.name || t("expenses.unknown_category");
+    if (isError)   return t("common.error");
+    return categories?.find(c => c.id === categoryId)?.name ?? t("expensesPage.categoryPlaceholder");
   };
 
   return (
@@ -44,7 +44,7 @@ export function ExpenseFilters({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder={t("expenses.search")}
+            placeholder={t("expensesPage.searchPlaceholder")}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9"
@@ -54,16 +54,16 @@ export function ExpenseFilters({
         {/* Category Filter */}
         <Select value={category} onValueChange={onCategoryChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder={t("expenses.category")} />
+            <SelectValue placeholder={t("expensesPage.filterByCategory")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("expenses.all_categories")}</SelectItem>
+            <SelectItem value="all">{t("expensesPage.allCategories")}</SelectItem>
             {isLoading ? (
               <SelectItem value="loading" disabled>{t("common.loading")}</SelectItem>
             ) : isError ? (
               <SelectItem value="error" disabled>{t("common.error")}: {error?.message}</SelectItem>
             ) : categories?.length === 0 ? (
-              <SelectItem value="no-categories" disabled>{t("expenses.no_categories")}</SelectItem>
+              <SelectItem value="no-categories" disabled>{t("expensesPage.noFound")}</SelectItem>
             ) : (
               categories?.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
@@ -75,13 +75,13 @@ export function ExpenseFilters({
         {/* Sort */}
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder={t("expenses.sort_by")} />
+            <SelectValue placeholder={t("expensesPage.sortBy")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="date-desc">{t("expenses.sort_newest")}</SelectItem>
-            <SelectItem value="date-asc">{t("expenses.sort_oldest")}</SelectItem>
-            <SelectItem value="amount-desc">{t("expenses.sort_highest")}</SelectItem>
-            <SelectItem value="amount-asc">{t("expenses.sort_lowest")}</SelectItem>
+            <SelectItem value="date-desc">{t("expensesPage.sortNewest")}</SelectItem>
+            <SelectItem value="date-asc">{t("expensesPage.sortOldest")}</SelectItem>
+            <SelectItem value="amount-desc">{t("expensesPage.sortHighest")}</SelectItem>
+            <SelectItem value="amount-asc">{t("expensesPage.sortLowest")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -91,18 +91,16 @@ export function ExpenseFilters({
             <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               {dateRange?.from ? (
-                dateRange.to ? (
-                  <>{format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}</>
-                ) : format(dateRange.from, "LLL dd, yyyy")
-              ) : t("expenses.date_range")}
+                dateRange.to
+                  ? <>{format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}</>
+                  : format(dateRange.from, "LLL dd, yyyy")
+              ) : t("expensesPage.dateRange")}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              initialFocus mode="range" defaultMonth={dateRange?.from}
+            <Calendar initialFocus mode="range" defaultMonth={dateRange?.from}
               selected={dateRange} onSelect={onDateRangeChange}
-              numberOfMonths={2} className="pointer-events-auto"
-            />
+              numberOfMonths={2} className="pointer-events-auto" />
           </PopoverContent>
         </Popover>
       </div>
@@ -110,10 +108,10 @@ export function ExpenseFilters({
       {/* Active Filters */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground">{t("expenses.active_filters")}:</span>
+          <span className="text-sm text-muted-foreground">{t("expensesPage.activeFilters")}:</span>
           {search && (
             <Badge variant="secondary" className="gap-1">
-              {t("expenses.search_label")}: {search}
+              {t("expensesPage.searchLabel")}: {search}
               <X className="w-3 h-3 cursor-pointer" onClick={() => onSearchChange("")} />
             </Badge>
           )}
@@ -125,12 +123,12 @@ export function ExpenseFilters({
           )}
           {dateRange && (
             <Badge variant="secondary" className="gap-1">
-              {format(dateRange.from!, "MMM d")} - {dateRange.to ? format(dateRange.to, "MMM d") : "..."}
+              {format(dateRange.from!, "MMM d")} – {dateRange.to ? format(dateRange.to, "MMM d") : "…"}
               <X className="w-3 h-3 cursor-pointer" onClick={() => onDateRangeChange(undefined)} />
             </Badge>
           )}
           <Button variant="ghost" size="sm" onClick={onClearFilters} className="text-destructive hover:text-destructive">
-            {t("expenses.clear_all")}
+            {t("expensesPage.clearAll")}
           </Button>
         </div>
       )}

@@ -5,43 +5,59 @@ import { cn } from "@/lib/utils";
 import { Expense } from "@/hooks/useExpenses";
 import { useBudget } from "@/hooks/useBudget";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 interface AIRecommendationsProps {
   expenses: Expense[];
 }
 
+// All background/border/text classes are semantic — no hardcoded hex colors
 const typeStyles = {
-  warning: { bg: "bg-[#FFF8F1]", border: "border-[#FFD7B0]", text: "text-[#D97706]", iconBg: "bg-[#FFEDD5]" },
-  success: { bg: "bg-[#F0FDF4]", border: "border-[#BBF7D0]", text: "text-[#16A34A]", iconBg: "bg-[#DCFCE7]" },
-  trend: { bg: "bg-[#F0FDFA]", border: "border-[#99F6E4]", text: "text-[#0D9488]", iconBg: "bg-[#CCFBF1]" },
-  reminder: { bg: "bg-[#F0FDFA]", border: "border-[#99F6E4]", text: "text-[#0D9488]", iconBg: "bg-[#CCFBF1]" }, // Using same as trend to match image
+  warning:  {
+    bg:     "bg-warning/10",
+    border: "border-warning/30",
+    text:   "text-warning",
+    iconBg: "bg-warning/15",
+  },
+  success:  {
+    bg:     "bg-success/10",
+    border: "border-success/30",
+    text:   "text-success",
+    iconBg: "bg-success/15",
+  },
+  trend: {
+    bg:     "bg-primary/10",
+    border: "border-primary/30",
+    text:   "text-primary",
+    iconBg: "bg-primary/15",
+  },
+  reminder: {
+    bg:     "bg-primary/10",
+    border: "border-primary/30",
+    text:   "text-primary",
+    iconBg: "bg-primary/15",
+  },
 };
 
 const DEFAULT_BUDGETS: Record<string, number> = {
-  food: 3000,
-  transport: 1500,
-  shopping: 2000,
-  entertainment: 1000,
-  utilities: 2500,
-  health: 1000,
-  travel: 5000,
-  other: 500
+  food: 3000, transport: 1500, shopping: 2000, entertainment: 1000,
+  utilities: 2500, health: 1000, travel: 5000, other: 500,
 };
 
 export function AIRecommendations({ expenses }: AIRecommendationsProps) {
   const { data: budgetLimits } = useBudget();
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
 
   const generateRecommendations = () => {
     const recs = [];
     const now = new Date();
     const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    // Map current limits from DB, fallback to DEFAULT_BUDGETS if not set
+    const currentYear  = now.getFullYear();
+
     const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
-    budgetLimits?.forEach(limit => {
-      currentLimits[limit.categoryId] = Number(limit.limitAmount);
-    });
+    budgetLimits?.forEach(limit => { currentLimits[limit.categoryId] = Number(limit.limitAmount); });
 
     const monthlyExpenses = expenses.filter(e => {
       const d = new Date(e.date);
@@ -53,130 +69,130 @@ export function AIRecommendations({ expenses }: AIRecommendationsProps) {
       return acc;
     }, {} as Record<string, number>);
 
-    // 1. Budget Warnings (Matching Image: Shopping 600%)
+    // Budget warnings
     for (const [catId, total] of Object.entries(categoryTotals)) {
       const budget = currentLimits[catId];
       if (budget && total > budget * 0.8) {
         const percent = Math.round((total / budget) * 100);
         recs.push({
-          id: `budget-${catId}`,
-          icon: AlertTriangle,
-          title: "Budget Warning",
-          text: `You've spent ₺${total.toFixed(0)} (${percent}%) of your ${catId} budget.`,
-          type: "warning",
+          id:         `budget-${catId}`,
+          icon:       AlertTriangle,
+          title:      t("ai.alerts.budgetTitle"),
+          text:       `${formatAmount(total)} (${percent}%) — ${catId}`,
+          type:       "warning",
           confidence: 98,
-          action: "View budget",
-          path: "/budget"
+          action:     t("common.manage"),
+          path:       "/budget",
         });
       }
     }
 
-    // 2. AI Analysis (Matching Image: Categorized Transactions)
+    // AI analysis
     if (monthlyExpenses.length > 0) {
       recs.push({
-        id: "categorized",
-        icon: Tags,
-        title: "AI Analysis",
-        text: `Successfully analyzed ${monthlyExpenses.length} transactions this month. Everything looks categorized!`,
-        type: "success",
+        id:         "categorized",
+        icon:       Tags,
+        title:      t("ai.spendingAnalysis"),
+        text:       `${monthlyExpenses.length} ${t("ai.recs.spendingAction")} — ${t("ai.confidence")} 100%`,
+        type:       "success",
         confidence: 100,
-        action: "Review",
-        path: "/expenses"
+        action:     t("common.viewAll"),
+        path:       "/expenses",
       });
     }
 
-    // 3. General Trend (Matching Image: Friday Pattern)
+    // Pattern insight
     if (expenses.length > 5) {
       recs.push({
-        id: "trend-friday",
-        icon: TrendingUp,
-        title: "Spending Pattern",
-        text: "Based on your history, Friday is your highest spending day. Try a 'No Spend Friday'!",
-        type: "trend",
+        id:         "trend-pattern",
+        icon:       TrendingUp,
+        title:      t("ai.alerts.patternTitle"),
+        text:       t("ai.alerts.patternMsg"),
+        type:       "trend",
         confidence: 90,
-        action: "See details",
-        path: "/expenses"
+        action:     t("common.viewAll"),
+        path:       "/expenses",
       });
     }
 
-    // Fallback for empty state
+    // Fallback empty state
     if (recs.length === 0) {
       recs.push({
-        id: "empty-tip",
-        icon: Brain,
-        title: "AI Getting Ready",
-        text: "Add some expenses to see personalized recommendations and spending patterns.",
-        type: "success",
+        id:         "empty-tip",
+        icon:       Brain,
+        title:      t("ai.active"),
+        text:       t("dashboard.aiAnalyzing"),
+        type:       "success",
         confidence: 100,
-        action: "Add Expense",
-        path: "/add-expense"
+        action:     t("nav.addExpense"),
+        path:       "/add-expense",
       });
     }
 
-    return recs.slice(0, 3); // Image shows 3 cards
+    return recs.slice(0, 3);
   };
 
   const recommendations = generateRecommendations();
 
   return (
-    <Card className="border-[#E5E7EB] bg-white overflow-hidden relative h-full">
-      <CardHeader className="pb-3 relative">
-        <div className="flex items-center justify-between">
+    <Card className="border-border bg-card overflow-hidden h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2.5 rounded-xl bg-[#0D9488]/10">
-              <Brain className="w-5 h-5 text-[#0D9488]" />
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Brain className="w-5 h-5 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                AI Insights & Recommendations
+                {t("dashboard.aiInsightsTitle")}
                 <AIBadge variant="inline" animated={false} />
               </div>
               <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                Dynamic analysis of your real spending
+                {t("dashboard.aiInsightsSubtitle")}
               </p>
             </div>
           </CardTitle>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F9FAFB] border border-[#F3F4F6]">
-            <Zap className="w-4 h-4 text-[#0D9488]" />
-            <span className="text-xs font-medium text-muted-foreground">{recommendations.length} insights</span>
+          {/* Insight count badge — semantic */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/60 border border-border">
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("dashboard.newInsights", { count: recommendations.length })}
+            </span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+
+      <CardContent>
+        <div className="grid gap-4 sm:grid-cols-2">
           {recommendations.map((rec, index) => {
-            const styles = typeStyles[rec.type as keyof typeof typeStyles] || typeStyles.success;
-            const Icon = rec.icon;
-            
+            const styles = typeStyles[rec.type as keyof typeof typeStyles] ?? typeStyles.success;
+            const Icon   = rec.icon;
             return (
               <div
                 key={rec.id}
                 className={cn(
                   "group relative p-4 rounded-xl border transition-all duration-300 hover:shadow-md",
-                  styles.bg,
-                  styles.border,
+                  styles.bg, styles.border,
                   index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
                 )}
               >
-                <div className="absolute top-2.5 right-3 flex items-center gap-1 opacity-40">
-                  <Sparkles className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span className="text-[10px] font-bold text-[#0D9488]">{rec.confidence}%</span>
+                {/* Confidence badge */}
+                <div className="absolute top-2.5 right-3 flex items-center gap-1 opacity-50">
+                  <Sparkles className={cn("w-3.5 h-3.5", styles.text)} />
+                  <span className={cn("text-[10px] font-bold", styles.text)}>{rec.confidence}%</span>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className={cn("p-2 rounded-lg", styles.iconBg)}>
+                  <div className={cn("p-2 rounded-lg flex-shrink-0", styles.iconBg)}>
                     <Icon className={cn("w-4 h-4", styles.text)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-[#1F2937]">{rec.title}</h4>
-                    <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-                      {rec.text}
-                    </p>
-                    <Link to={rec.path} className={cn(
-                      "mt-2 text-xs font-semibold flex items-center gap-1 transition-colors w-fit",
-                      styles.text,
-                      "hover:underline"
-                    )}>
+                    <h4 className="font-semibold text-sm text-foreground">{rec.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{rec.text}</p>
+                    <Link
+                      to={rec.path}
+                      className={cn("mt-2 text-xs font-semibold flex items-center gap-1 transition-colors w-fit hover:underline", styles.text)}
+                    >
                       {rec.action} →
                     </Link>
                   </div>
