@@ -39,7 +39,30 @@
     "members": "üye",
     "people": "kişi",
     "settled": "Ödendi",
-    "of": "/"
+    "of": "/",
+    "discard": "Sil",
+    "file": "Dosya",
+    "save": "Kaydet",
+    "analyze": "Analiz Et",
+    "success": "Başarılı",
+    "loadingData": "Yükleniyor...",
+    "noSpeechDetected": "Konuşma algılanamadı",
+    "reviewTranscript": "Metni İncele",
+    "verifyExtraction": "Yapay Zeka Çıkarımını Doğrula",
+    "extractionComplete": "Çıkarım tamamlandı!",
+    "readingReceipt": "Fiş OCR ile okunuyor...",
+    "loginRequired": "Giriş yapmalısınız.",
+    "loadingGroups": "Gruplar yükleniyor..."
+  },
+  "categories": {
+    "food": "Yeme & İçme",
+    "transport": "Ulaşım",
+    "shopping": "Alışveriş",
+    "entertainment": "Eğlence",
+    "utilities": "Faturalar",
+    "health": "Sağlık",
+    "other": "Diğer",
+    "travel": "Seyahat"
   },
   "dashboard": {
     "title": "Panel",
@@ -57,6 +80,7 @@
     "line": "Çizgi",
     "spent": "Harcanan",
     "recentTransactions": "Son İşlemler",
+    "monthlyAverage": "Ort",
     "aiInsightsTitle": "Yapay Zekâ Önerileri",
     "aiInsightsSubtitle": "Makine öğrenmesi destekli kişiselleştirilmiş analiz",
     "newInsights": "{{count}} yeni öngörü",
@@ -477,7 +501,11 @@
       "billAction": "Şimdi öde",
       "goalTitle": "Hedef İlerlemesi",
       "goalText": "Harika! Tasarruf oranınız bu ay %5 arttı. Hedefin 2 hafta ilerisindesiniz.",
-      "goalAction": "Hedefleri görüntüle"
+      "goalAction": "Hedefleri görüntüle",
+      "foodTip": "Haftada 2 kez daha evde yemek pişirmeyi deneyin",
+      "shoppingTip": "Harika! Bütçenin altındasınız",
+      "transportTip": "Haftada iki kez araç paylaşımını düşünün",
+      "entertainmentTip": "Bu alanda akıllıca harcama yapıyorsunuz"
     }
   },
   "categories": {

@@ -5,6 +5,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { AIBadge } from "./AIBadge";
 import { Brain, TrendingUp, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 interface ForecastData {
   prediction: number;
@@ -20,6 +22,8 @@ export function AIPredictiveChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -172,7 +176,7 @@ export function AIPredictiveChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₺${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => formatAmount(v, { compact: true })} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
@@ -183,7 +187,7 @@ export function AIPredictiveChart() {
                 }}
                 formatter={(value: any, name: string, props: any) => [
                   <div key={name} className="flex flex-col gap-0.5">
-                    <span className="font-bold text-base text-foreground">₺{value?.toLocaleString()}</span>
+                    <span className="font-bold text-base text-foreground">{formatAmount(value)}</span>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {name === "actual" ? "Actual Spending" : `AI Prediction (${props.payload.confidence}% Conf.)`}
                     </span>

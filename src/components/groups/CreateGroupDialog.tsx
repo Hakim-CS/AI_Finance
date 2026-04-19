@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface CreateGroupDialogProps {
   onCreateGroup: (name: string, description: string, memberEmails: string[]) => void;
@@ -26,18 +27,19 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
   const [description, setDescription] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const { t } = useTranslation();
 
   const handleAddMember = () => {
     const email = memberEmail.trim().toLowerCase();
     if (!email) return;
     
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t('groupsPage.errors.invalidEmail'));
       return;
     }
     
     if (memberEmails.includes(email)) {
-      toast.error("This email is already added");
+      toast.error(t('groupsPage.errors.emailExists'));
       return;
     }
     
@@ -51,12 +53,12 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      toast.error("Please enter a group name");
+      toast.error(t('groupsPage.errors.nameRequired'));
       return;
     }
     
     onCreateGroup(name.trim(), description.trim(), memberEmails);
-    toast.success("Group created successfully!");
+    toast.success(t('groupsPage.groupCreated'));
     
     // Reset form
     setName("");
@@ -70,23 +72,23 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
       <DialogTrigger asChild>
         <Button className="gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
-          Create Group
+          {t('groupsPage.createGroup')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Group</DialogTitle>
+          <DialogTitle>{t('groupsPage.createNewGroup')}</DialogTitle>
           <DialogDescription>
-            Create a group to split expenses with friends, family, or colleagues.
+            {t('groupsPage.createDialogDesc')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Group Name</Label>
+            <Label htmlFor="name">{t('groupsPage.groupName')}</Label>
             <Input
               id="name"
-              placeholder="e.g., Roommates, Trip to Paris"
+              placeholder={t('groupsPage.groupNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={50}
@@ -94,10 +96,10 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+            <Label htmlFor="description">{t('groupsPage.descriptionOptional')}</Label>
             <Textarea
               id="description"
-              placeholder="What's this group for?"
+              placeholder={t('groupsPage.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}
@@ -106,18 +108,18 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="members">Add Members</Label>
+            <Label htmlFor="members">{t('groupsPage.addMembers')}</Label>
             <div className="flex gap-2">
               <Input
                 id="members"
-                placeholder="Enter email address"
+                placeholder={t('groupsPage.memberEmailPlaceholder')}
                 type="email"
                 value={memberEmail}
                 onChange={(e) => setMemberEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMember())}
               />
               <Button type="button" variant="outline" onClick={handleAddMember}>
-                Add
+                {t('common.add')}
               </Button>
             </div>
             
@@ -141,10 +143,10 @@ export function CreateGroupDialog({ onCreateGroup }: CreateGroupDialogProps) {
         
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} className="gradient-primary">
-            Create Group
+            {t('groupsPage.createGroup')}
           </Button>
         </DialogFooter>
       </DialogContent>

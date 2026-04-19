@@ -55,5 +55,6 @@ export function getStatusColor(percentage: number): string {
 }
 
 export function formatCurrency(amount: number): string {
-  return `₺${amount.toLocaleString()}`;
+  // Deprecated — use usePreferences().formatAmount() instead
+  return `${amount.toLocaleString()}`;
 }

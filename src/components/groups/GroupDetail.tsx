@@ -18,6 +18,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
+import { useTranslation } from "react-i18next";
+import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
 import {
   BarChart,
   Bar,
@@ -40,6 +42,9 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: categories } = useCategories();
+  const { t } = useTranslation();
+  const { formatAmount, currency } = usePreferences();
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
 
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
@@ -68,7 +73,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
   const handleDeleteGroup = async () => {
     if (!group.id) {
-      toast({ title: "Error", description: "Invalid group ID", variant: "destructive" });
+      toast({ title: t('common.error'), description: "Invalid group ID", variant: "destructive" });
       return;
     }
 
@@ -90,11 +95,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         throw new Error(errorMessage);
       }
 
-      toast({ title: "Group Deleted", description: "The group has been removed successfully." });
+      toast({ title: t('common.success'), description: t('groupsPage.groupCreated') });
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       onBack();
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: e.message, variant: "destructive" });
     } finally {
       setIsDeleting(false);
     }
@@ -116,12 +121,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || "User not found");
       }
-      toast({ title: "Success", description: "Member added to group" });
+      toast({ title: t('common.success'), description: t('groupsPage.addMember') });
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       setMemberEmail("");
       setAddMemberOpen(false);
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: e.message, variant: "destructive" });
     } finally {
       setIsAddingMember(false);
     }
@@ -144,7 +149,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         })
       });
       if (!res.ok) throw new Error("Failed to add expense");
-      toast({ title: "Success", description: "Group expense added" });
+      toast({ title: t('common.success'), description: t('addExpensePage.manual.added') });
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       setAddExpenseOpen(false);
       setExpenseExpenseData({
@@ -154,7 +159,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
         date: new Date().toISOString().split('T')[0]
       });
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: e.message, variant: "destructive" });
     } finally {
       setIsAddingExpense(false);
     }
@@ -180,20 +185,20 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-bold uppercase tracking-wider text-[10px] h-9 px-4">
                   <Trash2 className="w-3.5 h-3.5 mr-2" />
-                  Delete Group
+                  {t('common.delete')} {t('groupsPage.title')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('common.confirm')}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete the group <span className="font-bold text-slate-900">"{group.name}"</span> and remove all associated expense records. This action cannot be undone.
+                    {t('groupsPage.createDialogDesc')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteGroup} className="bg-rose-600 hover:bg-rose-700 text-white">
-                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Permanently Delete"}
+                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.delete')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -201,7 +206,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
           )}
           <Button size="sm" className="gradient-primary h-9 px-4 font-bold uppercase tracking-wider text-[10px]" onClick={() => setAddExpenseOpen(true)}>
             <Plus className="w-3.5 h-3.5 mr-2" />
-            Add Expense
+             {t('nav.addExpense')}
           </Button>
         </div>
       </div>
@@ -215,8 +220,8 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               <Receipt className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Group Spending</p>
-              <p className="text-2xl font-bold text-foreground">₺{totalExpenses.toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">{t('groupsPage.totalExpenses')}</p>
+              <p className="text-2xl font-bold text-foreground">{formatAmount(totalExpenses)}</p>
             </div>
           </CardContent>
         </Card>
@@ -226,7 +231,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               <Plus className="w-5 h-5 text-secondary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Members Involved</p>
+              <p className="text-sm text-muted-foreground">{t('common.members')}</p>
               <p className="text-2xl font-bold text-foreground">{group.members.length}</p>
             </div>
           </CardContent>
@@ -243,12 +248,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               }
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Your Net Balance</p>
+              <p className="text-sm text-muted-foreground">{t('groupsPage.yourBalance')}</p>
               <p className={cn(
                 "text-2xl font-bold",
                 userBalance >= 0 ? "text-success" : "text-destructive"
               )}>
-                {userBalance >= 0 ? "+" : ""}₺{Math.abs(userBalance).toFixed(2)}
+                {userBalance >= 0 ? "+" : ""}{formatAmount(Math.abs(userBalance))}
               </p>
             </div>
           </CardContent>
@@ -262,12 +267,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  Settlement Overview
+                  {t('groupsPage.settlements')}
                 </CardTitle>
-                <CardDescription className="text-sm">Visualizing who owes and who is owed</CardDescription>
+                <CardDescription className="text-sm">{t('groupsPage.membersAndBalances')}</CardDescription>
               </div>
               <Badge variant="outline" className="text-xs font-normal">
-                {debts.length === 0 ? "Fully Settled" : `${debts.length} Pending Payments`}
+                {debts.length === 0 ? t('groupsPage.allSettled') : `${debts.length} ${t('groupsPage.settlements')}`}
               </Badge>
             </div>
           </CardHeader>
@@ -300,7 +305,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                             <div className="bg-popover p-2 border border-border shadow-md rounded-lg text-xs">
                               <p className="font-bold text-foreground">{payload[0].payload.name}</p>
                               <p className={val >= 0 ? "text-success" : "text-destructive"}>
-                                {val >= 0 ? "Is owed: " : "Owes: "} ₺{Math.abs(val).toFixed(2)}
+                                {formatAmount(Math.abs(val))}
                               </p>
                             </div>
                           );
@@ -324,11 +329,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
 
               {/* Repayment List */}
               <div className="md:col-span-2 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Suggested Payments</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('groupsPage.settlements')}</p>
                 {debts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/30 rounded-xl">
                     <p className="text-sm font-medium text-muted-foreground">
-                      🎉 Everyone is settled up!
+                      {t('groupsPage.allSettled')}
                     </p>
                   </div>
                 ) : (
@@ -340,11 +345,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                         <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card shadow-sm">
                           <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <span className="font-bold text-[13px] text-foreground truncate">{fromMember?.name}</span>
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase shrink-0">pays</span>
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase shrink-0">{t('groupsPage.paidBy').split(' ')[0]}</span>
                             <span className="font-bold text-[13px] text-foreground truncate">{toMember?.name}</span>
                           </div>
                           <div className="ml-3 shrink-0">
-                            <span className="text-[14px] font-black text-primary">₺{debt.amount.toFixed(2)}</span>
+                            <span className="text-[14px] font-black text-primary">{formatAmount(debt.amount)}</span>
                           </div>
                         </div>
                       );
@@ -361,7 +366,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
           {/* Members & Balances List */}
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Members</CardTitle>
+              <CardTitle className="text-base">{t('common.members')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {group.members.map((member) => {
@@ -388,7 +393,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                         balance === 0 && "bg-muted text-muted-foreground border-border"
                       )}
                     >
-                      {balance > 0 ? "+" : ""}{balance === 0 ? "Settled" : `₺${balance.toFixed(2)}`}
+                      {balance > 0 ? "+" : ""}{balance === 0 ? t('common.settled') : formatAmount(balance)}
                     </Badge>
                   </div>
                 );
@@ -396,7 +401,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               <Separator className="my-2" />
               <Button variant="outline" size="sm" className="w-full text-sm h-9" onClick={() => setAddMemberOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Member
+                {t('groupsPage.addMember')}
               </Button>
             </CardContent>
           </Card>
@@ -406,11 +411,11 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  Expenses
+                  {t('groupsPage.expenses')}
                 </CardTitle>
                 <Button size="sm" className="gradient-primary h-7 text-xs px-2" onClick={() => setAddExpenseOpen(true)}>
                   <Plus className="w-3 h-3 mr-1" />
-                  Add
+                  {t('common.add')}
                 </Button>
               </div>
             </CardHeader>
@@ -418,7 +423,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               {group.expenses.length === 0 ? (
                 <div className="text-center py-6">
                   <Receipt className="w-9 h-9 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No expenses yet</p>
+                  <p className="text-sm text-muted-foreground">{t('groupsPage.noGroupsYet')}</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
@@ -428,14 +433,14 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                       <div key={expense.id} className="p-2.5 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-medium text-sm truncate flex-1">{expense.description}</p>
-                          <p className="font-bold text-sm ml-2">₺{expense.amount.toFixed(2)}</p>
+                          <p className="font-bold text-sm ml-2">{formatAmount(expense.amount)}</p>
                         </div>
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-muted-foreground">
-                            By {paidByMember?.name || "Member"} • {format(new Date(expense.date), "MMM d")}
+                            {t('groupsPage.paidBy')} {paidByMember?.name || t('common.members')} • {format(new Date(expense.date), "MMM d")}
                           </p>
                           <Badge variant="outline" className="text-[9px] h-4.5 px-1 leading-none">
-                            {expense.splitBetween.length} ppl
+                            {expense.splitBetween.length} {t('common.people')}
                           </Badge>
                         </div>
                       </div>
@@ -452,12 +457,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
       <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Member</DialogTitle>
-            <DialogDescription>Add a friend by their email address</DialogDescription>
+            <DialogTitle>{t('groupsPage.addMember')}</DialogTitle>
+            <DialogDescription>{t('groupsPage.memberEmailPlaceholder')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Email Address</Label>
+              <Label>{t('settings.profile.email')}</Label>
               <Input
                 placeholder="friend@example.com"
                 value={memberEmail}
@@ -466,9 +471,9 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddMemberOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddMemberOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleAddMember} disabled={isAddingMember}>
-              {isAddingMember ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add to Group"}
+              {isAddingMember ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -478,12 +483,12 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
       <Dialog open={addExpenseOpen} onOpenChange={setAddExpenseOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Group Expense</DialogTitle>
-            <DialogDescription>This expense will be split between all members</DialogDescription>
+            <DialogTitle>{t('nav.addExpense')}</DialogTitle>
+            <DialogDescription>{t('groupsPage.createDialogDesc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('addExpensePage.manual.descriptionLabel')}</Label>
               <Input
                 placeholder="Dinner, Electricity, etc."
                 value={expenseData.description}
@@ -491,9 +496,9 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Amount</Label>
+              <Label>{t('addExpensePage.manual.amount')}</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">₺</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">{currencySymbol}</span>
                 <Input
                   type="number"
                   className="pl-7"
@@ -504,7 +509,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t('addExpensePage.manual.category')}</Label>
               <Select
                 value={expenseData.categoryId}
                 onValueChange={(v) => setExpenseExpenseData({ ...expenseData, categoryId: v })}
@@ -514,16 +519,16 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {categories?.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.id}>{t(`categories.${cat.id}`, { defaultValue: cat.name })}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddExpenseOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddExpenseOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleAddExpense} disabled={isAddingExpense}>
-              {isAddingExpense ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Expense"}
+              {isAddingExpense ? <Loader2 className="w-4 h-4 animate-spin" /> : t('nav.addExpense')}
             </Button>
           </DialogFooter>
         </DialogContent>

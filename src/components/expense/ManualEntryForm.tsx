@@ -16,28 +16,33 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useCategories } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext"; // Import useAuth
-import { useQueryClient } from "@tanstack/react-query"; // Import useQueryClient
-
-const formSchema = z.object({
-  amount: z.string().min(1, "Amount is required").refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    "Amount must be a positive number"
-  ),
-  category: z.string().min(1, "Please select a category"),
-  description: z.string().min(1, "Description is required").max(100, "Description too long"),
-  date: z.date({ required_error: "Please select a date" }),
-  notes: z.string().max(500, "Notes too long").optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { useAuth } from "@/context/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
 
 export function ManualEntryForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { data: categories, isLoading: categoriesLoading, isError: categoriesError, error: categoriesFetchError } = useCategories();
-  const { token } = useAuth(); // Get the token from auth context
-  const queryClient = useQueryClient(); // For query invalidation
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { formatAmount, currency } = usePreferences();
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+
+  const formSchema = z.object({
+    amount: z.string().min(1, t('addExpensePage.manual.errors.amountRequired')).refine(
+      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+      t('addExpensePage.manual.errors.amountPositive')
+    ),
+    category: z.string().min(1, t('addExpensePage.manual.errors.categoryRequired')),
+    description: z.string().min(1, t('addExpensePage.manual.errors.descRequired')).max(100, t('addExpensePage.manual.errors.descTooLong')),
+    date: z.date({ required_error: t('addExpensePage.manual.errors.dateRequired') }),
+    notes: z.string().max(500, t('addExpensePage.manual.errors.notesTooLong')).optional(),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,8 +59,8 @@ export function ManualEntryForm() {
     setIsSubmitting(true);
     if (!token) {
       toast({
-        title: "Error",
-        description: "You must be logged in to add an expense.",
+        title: t('common.error'),
+        description: t('common.loginRequired'),
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -71,9 +76,9 @@ export function ManualEntryForm() {
         },
         body: JSON.stringify({
           amount: parseFloat(values.amount),
-          categoryId: values.category, // Backend expects categoryId
+          categoryId: values.category,
           description: values.description,
-          date: values.date.toISOString(), // Send as ISO string
+          date: values.date.toISOString(),
           notes: values.notes,
         }),
       });
@@ -85,16 +90,19 @@ export function ManualEntryForm() {
       }
 
       toast({
-        title: "Expense added!",
-        description: `₺${values.amount} for ${values.description} has been recorded.`,
+        title: t('addExpensePage.manual.added'),
+        description: t('addExpensePage.manual.addedDesc', {
+          amount: formatAmount(parseFloat(values.amount)),
+          description: values.description,
+        }),
       });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] }); // Invalidate expenses query
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
       form.reset();
     } catch (error: any) {
       console.error("Error adding expense:", error);
       toast({
-        title: "Error adding expense",
-        description: error.message || "An unexpected error occurred.",
+        title: t('common.error'),
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -105,8 +113,8 @@ export function ManualEntryForm() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-xl">Manual Entry</CardTitle>
-        <CardDescription>Enter expense details manually</CardDescription>
+        <CardTitle className="text-xl">{t('addExpensePage.manual.title')}</CardTitle>
+        <CardDescription>{t('addExpensePage.manual.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -116,10 +124,10 @@ export function ManualEntryForm() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.amount')}</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₺</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                       <Input
                         {...field}
                         type="number"
@@ -139,30 +147,34 @@ export function ManualEntryForm() {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.category')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={categoriesLoading ? "Loading..." : categoriesError ? "Error loading" : "Select category"} />
+                        <SelectValue placeholder={
+                          categoriesLoading ? t('common.loading') :
+                          categoriesError ? t('common.error') :
+                          t('addExpensePage.manual.selectCategory')
+                        } />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {categoriesLoading ? (
                         <SelectItem value="loading" disabled>
-                          Loading categories...
+                          {t('common.loading')}
                         </SelectItem>
                       ) : categoriesError ? (
                         <SelectItem value="error" disabled>
-                          Error: {categoriesFetchError?.message}
+                          {t('common.error')}: {categoriesFetchError?.message}
                         </SelectItem>
                       ) : categories?.length === 0 ? (
                         <SelectItem value="no-categories" disabled>
-                          No categories found
+                          {t('addExpensePage.manual.selectCategory')}
                         </SelectItem>
                       ) : (
                         categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+                            {t(`categories.${cat.id}`, { defaultValue: cat.name })}
                           </SelectItem>
                         ))
                       )}
@@ -178,9 +190,9 @@ export function ManualEntryForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.descriptionLabel')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="What was this expense for?" />
+                    <Input {...field} placeholder={t('addExpensePage.manual.descriptionPlaceholder')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +204,7 @@ export function ManualEntryForm() {
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.date')}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -203,7 +215,7 @@ export function ManualEntryForm() {
                             !field.value && "text-muted-foreground"
                           )}
                         >
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          {field.value ? format(field.value, "PPP") : <span>{t('addExpensePage.manual.pickDate')}</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -229,11 +241,11 @@ export function ManualEntryForm() {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Add any additional notes..."
+                      placeholder={t('addExpensePage.manual.notesPlaceholder')}
                       className="resize-none"
                       rows={3}
                     />
@@ -251,10 +263,10 @@ export function ManualEntryForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t('addExpensePage.manual.saving')}
                 </>
               ) : (
-                "Add Expense"
+                t('addExpensePage.manual.addExpense')
               )}
             </Button>
           </form>

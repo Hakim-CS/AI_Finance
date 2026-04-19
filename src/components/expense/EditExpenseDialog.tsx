@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Expense } from "@/hooks/useExpenses";
+import { useTranslation } from "react-i18next";
+import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
 
 const formSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -50,6 +52,9 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
   const { data: categories, isLoading: categoriesLoading, isError: categoriesError, error: categoriesFetchError } = useCategories();
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { currency } = usePreferences();
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -143,10 +148,10 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.amount')}</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₺</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                       <Input
                         {...field}
                         type="number"
@@ -166,11 +171,11 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.category')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={categoriesLoading ? "Loading..." : categoriesError ? "Error loading" : "Select category"} />
+                        <SelectValue placeholder={categoriesLoading ? t('common.loading') : categoriesError ? t('common.error') : t('addExpensePage.manual.selectCategory')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -189,7 +194,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                       ) : (
                         categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+                            {t(`categories.${cat.id}`, { defaultValue: cat.name })}
                           </SelectItem>
                         ))
                       )}
@@ -205,9 +210,9 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.descriptionLabel')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="What was this expense for?" />
+                    <Input {...field} placeholder={t('addExpensePage.manual.descriptionPlaceholder')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,7 +224,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.date')}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -230,7 +235,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                             !field.value && "text-muted-foreground"
                           )}
                         >
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          {field.value ? format(field.value, "PPP") : <span>{t('addExpensePage.manual.pickDate')}</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -256,11 +261,11 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormLabel>{t('addExpensePage.manual.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Add any additional notes..."
+                      placeholder={t('addExpensePage.manual.notesPlaceholder')}
                       className="resize-none"
                       rows={3}
                     />
@@ -274,10 +279,10 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving changes...
+                    {t('addExpensePage.manual.saving')}
                   </>
                 ) : (
-                  "Save changes"
+                  t('common.save')
                 )}
               </Button>
             </DialogFooter>

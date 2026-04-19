@@ -8,6 +8,8 @@ import Tesseract from 'tesseract.js';
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 type UploadState = "idle" | "processing" | "complete";
 
@@ -26,6 +28,8 @@ export function ReceiptUpload() {
   const { token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -49,15 +53,14 @@ export function ReceiptUpload() {
     setState("processing");
     
     try {
-      // 1. Perform Tesseract.js turkish + english support
+      // Tesseract.js — Turkish + English support
       const result = await Tesseract.recognize(file, 'tur+eng', {
         logger: m => console.log(m)
       });
       
       const rawText = result.data.text;
-      console.log("OCR Raw Text:", rawText);
 
-      // 2. send text to backend for parsing
+      // Send text to backend for parsing
       const response = await fetch(`${API_BASE}/expenses/parse-receipt`, {
         method: 'POST',
         headers: {
@@ -73,7 +76,7 @@ export function ReceiptUpload() {
       setParsedData(data);
       setState("complete");
     } catch (error: any) {
-      toast({ title: "Extraction Error", description: error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
       setState("idle");
     }
   };
@@ -91,20 +94,20 @@ export function ReceiptUpload() {
         body: JSON.stringify({
           amount: parsedData.amount,
           categoryId: parsedData.categoryId,
-          description: `Receipt: ${parsedData.categoryId}`,
+          description: `${t('addExpensePage.receipt.title')}: ${t(`categories.${parsedData.categoryId}`, { defaultValue: parsedData.categoryId })}`,
           date: new Date(parsedData.date).toISOString(),
         }),
       });
 
       if (response.ok) {
-        toast({ title: "Success", description: "Expense saved from receipt." });
+        toast({ title: t('common.success'), description: t('addExpensePage.manual.added') });
         queryClient.invalidateQueries({ queryKey: ['expenses'] });
         handleReset();
       } else {
         throw new Error("Failed to save");
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
     }
   };
 
@@ -117,8 +120,8 @@ export function ReceiptUpload() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-xl">Receipt Upload</CardTitle>
-        <CardDescription>Upload a receipt for automatic extraction (Turkish/English)</CardDescription>
+        <CardTitle className="text-xl">{t('addExpensePage.receipt.title')}</CardTitle>
+        <CardDescription>{t('addExpensePage.receipt.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {state === "idle" && (
@@ -143,8 +146,8 @@ export function ReceiptUpload() {
                   <Upload className="w-7 h-7 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Drag & drop your receipt</p>
-                  <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
+                  <p className="font-medium text-foreground">{t('addExpensePage.receipt.dragDrop')}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('addExpensePage.receipt.orBrowse')}</p>
                 </div>
                 <input
                   id="receipt-input"
@@ -161,7 +164,7 @@ export function ReceiptUpload() {
               <Button variant="outline" className="flex-1" asChild>
                 <label className="cursor-pointer">
                   <Image className="w-4 h-4 mr-2" />
-                  Choose File
+                  {t('addExpensePage.receipt.chooseFile')}
                   <input
                     type="file"
                     accept="image/*"
@@ -173,7 +176,7 @@ export function ReceiptUpload() {
               <Button variant="outline" className="flex-1" asChild>
                 <label className="cursor-pointer">
                   <Camera className="w-4 h-4 mr-2" />
-                  Take Photo
+                  {t('addExpensePage.receipt.takePhoto')}
                   <input
                     type="file"
                     accept="image/*"
@@ -190,39 +193,39 @@ export function ReceiptUpload() {
         {state === "processing" && (
           <div className="text-center py-8">
             <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-            <p className="font-medium text-foreground">Reading receipt with OCR...</p>
+            <p className="font-medium text-foreground">{t('common.readingReceipt')}</p>
             <p className="text-sm text-muted-foreground mt-1">{fileName}</p>
           </div>
         )}
 
         {state === "complete" && parsedData && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 text-green-500">
+            <div className="flex items-center gap-2 text-success">
               <Check className="w-5 h-5" />
-              <span className="font-medium">Extraction complete!</span>
+              <span className="font-medium">{t('common.extractionComplete')}</span>
             </div>
 
             <div className="p-4 bg-muted rounded-xl space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Amount:</span>
-                <span className="font-bold text-foreground">₺{parsedData.amount?.toFixed(2) || '0.00'}</span>
+                <span className="text-muted-foreground">{t('addExpensePage.manual.amount')}:</span>
+                <span className="font-bold text-foreground">{parsedData.amount ? formatAmount(parsedData.amount) : '0.00'}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Category:</span>
-                <span className="font-medium text-foreground uppercase">{parsedData.categoryId}</span>
+                <span className="text-muted-foreground">{t('addExpensePage.manual.category')}:</span>
+                <span className="font-medium text-foreground uppercase">{t(`categories.${parsedData.categoryId}`, { defaultValue: parsedData.categoryId })}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">File:</span>
+                <span className="text-muted-foreground">{t('common.file')}:</span>
                 <span className="text-xs text-foreground truncate max-w-[150px]">{fileName}</span>
               </div>
             </div>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={handleReset} className="flex-1">
-                <X className="w-4 h-4 mr-2" /> Discard
+                <X className="w-4 h-4 mr-2" /> {t('common.discard')}
               </Button>
               <Button onClick={handleSaveExpense} className="flex-1 gradient-primary">
-                <Check className="w-4 h-4 mr-2" /> Save
+                <Check className="w-4 h-4 mr-2" /> {t('common.save')}
               </Button>
             </div>
           </div>

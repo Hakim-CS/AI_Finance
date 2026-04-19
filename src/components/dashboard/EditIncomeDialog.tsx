@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Pencil, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { usePreferences, CURRENCIES } from "@/context/PreferencesContext";
 
 export function EditIncomeDialog() {
   const { user, token, updateUser } = useAuth();
@@ -14,6 +16,9 @@ export function EditIncomeDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { currency } = usePreferences();
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
 
   const handleSave = async () => {
     if (!token) return;
@@ -36,10 +41,10 @@ export function EditIncomeDialog() {
         income: parseFloat(updatedUser.income)
       });
       
-      toast({ title: "Success", description: "Monthly income updated." });
+      toast({ title: t('common.success'), description: t('settings.profile.monthlyIncome') });
       setIsOpen(false);
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -54,14 +59,14 @@ export function EditIncomeDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Monthly Income</DialogTitle>
+          <DialogTitle>{t('settings.profile.monthlyIncome')}</DialogTitle>
           <DialogDescription>
-            Enter your monthly income to keep your balance and savings rate accurate.
+            {t('settings.profile.monthlyIncome')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="income">Monthly Income (₺)</Label>
+            <Label htmlFor="income">{t('settings.profile.monthlyIncome')} ({currencySymbol})</Label>
             <Input
               id="income"
               type="number"
@@ -72,10 +77,10 @@ export function EditIncomeDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>{t('common.cancel')}</Button>
           <Button onClick={handleSave} disabled={isSaving} className="gradient-primary">
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Changes
+            {t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

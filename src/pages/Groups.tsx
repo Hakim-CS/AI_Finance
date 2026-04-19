@@ -6,12 +6,14 @@ import { GroupDetail } from "@/components/groups/GroupDetail";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useGroups, Group } from "@/hooks/useGroups";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function Groups() {
   const { groups, isLoading, createGroup } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
@@ -24,13 +26,13 @@ export default function Groups() {
     try {
       await createGroup({ name, description, memberEmails });
       toast({
-        title: "Success",
-        description: "Group created successfully!",
+        title: t('common.success'),
+        description: t('groupsPage.groupCreated'),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create group. Please try again.",
+        title: t('common.error'),
+        description: t('common.tryAgain'),
         variant: "destructive",
       });
     }
@@ -40,7 +42,7 @@ export default function Groups() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="ml-2 text-muted-foreground">Loading groups...</p>
+        <p className="ml-2 text-muted-foreground">{t('common.loadingGroups')}</p>
       </div>
     );
   }
@@ -58,8 +60,8 @@ export default function Groups() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Group Expenses</h1>
-          <p className="text-muted-foreground mt-1">Split expenses with friends and family</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('groupsPage.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('groupsPage.subtitle')}</p>
         </div>
         <CreateGroupDialog onCreateGroup={handleCreateGroup} />
       </div>
@@ -68,7 +70,7 @@ export default function Groups() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search groups..."
+          placeholder={t('groupsPage.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -92,12 +94,12 @@ export default function Groups() {
             <Users className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {searchQuery ? "No groups found" : "No groups yet"}
+            {searchQuery ? t('groupsPage.noGroupsFound') : t('groupsPage.noGroupsYet')}
           </h3>
           <p className="text-muted-foreground max-w-md mb-4">
             {searchQuery
-              ? "Try a different search term"
-              : "Create your first group to start splitting expenses with friends and family."}
+              ? t('groupsPage.noResults')
+              : t('groupsPage.createFirst')}
           </p>
         </div>
       )}

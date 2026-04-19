@@ -39,7 +39,30 @@
     "members": "members",
     "people": "people",
     "settled": "Settled",
-    "of": "of"
+    "of": "of",
+    "discard": "Discard",
+    "file": "File",
+    "save": "Save",
+    "analyze": "Analyze",
+    "success": "Success",
+    "loadingData": "Loading...",
+    "noSpeechDetected": "No speech detected",
+    "reviewTranscript": "Review Transcript",
+    "verifyExtraction": "Verify AI Extraction",
+    "extractionComplete": "Extraction complete!",
+    "readingReceipt": "Reading receipt with OCR...",
+    "loginRequired": "You must be logged in.",
+    "loadingGroups": "Loading groups..."
+  },
+  "categories": {
+    "food": "Food & Dining",
+    "transport": "Transportation",
+    "shopping": "Shopping",
+    "entertainment": "Entertainment",
+    "utilities": "Utilities",
+    "health": "Healthcare",
+    "other": "Other",
+    "travel": "Travel"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -57,6 +80,7 @@
     "line": "Line",
     "spent": "Spent",
     "recentTransactions": "Recent Transactions",
+    "monthlyAverage": "Avg",
     "aiInsightsTitle": "AI Insights & Recommendations",
     "aiInsightsSubtitle": "Personalized analysis powered by machine learning",
     "newInsights": "{{count}} new insights",
@@ -478,7 +502,11 @@
       "billAction": "Pay now",
       "goalTitle": "Goal Progress",
       "goalText": "Great job! Your savings rate increased by 5% this month. You're 2 weeks ahead of target.",
-      "goalAction": "View goals"
+      "goalAction": "View goals",
+      "foodTip": "Cook at home 2 more times per week",
+      "shoppingTip": "Great job! You're under budget",
+      "transportTip": "Consider carpooling twice a week",
+      "entertainmentTip": "You're spending wisely here"
     }
   },
   "categories": {

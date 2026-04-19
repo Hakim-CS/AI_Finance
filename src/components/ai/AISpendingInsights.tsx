@@ -2,57 +2,61 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, ShoppingCart, Utensils, Car, Home, Gamepad2 } from "lucide-react";
 import { AIBadge } from "./AIBadge";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 interface CategoryInsight {
-  category: string;
+  categoryId: string;
   icon: React.ElementType;
   currentSpend: number;
   averageSpend: number;
-  aiRecommendation: string;
+  aiRecommendationKey: string;
   potentialSavings: number;
   trend: "up" | "down" | "stable";
 }
 
 const insights: CategoryInsight[] = [
   {
-    category: "Food & Dining",
+    categoryId: "food",
     icon: Utensils,
     currentSpend: 680,
     averageSpend: 520,
-    aiRecommendation: "Cook at home 2 more times per week",
+    aiRecommendationKey: "ai.recs.foodTip",
     potentialSavings: 120,
     trend: "up",
   },
   {
-    category: "Shopping",
+    categoryId: "shopping",
     icon: ShoppingCart,
     currentSpend: 340,
     averageSpend: 380,
-    aiRecommendation: "Great job! You're under budget",
+    aiRecommendationKey: "ai.recs.shoppingTip",
     potentialSavings: 0,
     trend: "down",
   },
   {
-    category: "Transportation",
+    categoryId: "transport",
     icon: Car,
     currentSpend: 280,
     averageSpend: 250,
-    aiRecommendation: "Consider carpooling twice a week",
+    aiRecommendationKey: "ai.recs.transportTip",
     potentialSavings: 45,
     trend: "up",
   },
   {
-    category: "Entertainment",
+    categoryId: "entertainment",
     icon: Gamepad2,
     currentSpend: 150,
     averageSpend: 200,
-    aiRecommendation: "You're spending wisely here",
+    aiRecommendationKey: "ai.recs.entertainmentTip",
     potentialSavings: 0,
     trend: "down",
   },
 ];
 
 export function AISpendingInsights() {
+  const { t } = useTranslation();
+  const { formatAmount } = usePreferences();
   const totalSavings = insights.reduce((sum, i) => sum + i.potentialSavings, 0);
 
   return (
@@ -63,12 +67,12 @@ export function AISpendingInsights() {
             <div className="p-2 rounded-lg gradient-ai animate-float">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
-            AI Spending Analysis
+            {t('ai.smartAnalysis')}
             <AIBadge variant="inline" />
           </CardTitle>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Potential Monthly Savings</p>
-            <p className="text-lg font-bold text-success">${totalSavings}</p>
+            <p className="text-xs text-muted-foreground">{t('ai.potentialSavings')}</p>
+            <p className="text-lg font-bold text-success">{formatAmount(totalSavings)}</p>
           </div>
         </div>
       </CardHeader>
@@ -81,7 +85,7 @@ export function AISpendingInsights() {
 
             return (
               <div
-                key={insight.category}
+                key={insight.categoryId}
                 className={cn(
                   "p-4 rounded-xl bg-background/60 border border-border/50 transition-all duration-300 hover:shadow-md hover:border-primary/30 animate-fade-in"
                 )}
@@ -95,7 +99,7 @@ export function AISpendingInsights() {
                     )}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <span className="font-medium text-sm text-foreground">{insight.category}</span>
+                    <span className="font-medium text-sm text-foreground">{t(`categories.${insight.categoryId}`)}</span>
                   </div>
                   <span className={cn(
                     "text-xs font-medium px-2 py-0.5 rounded-full",
@@ -107,8 +111,8 @@ export function AISpendingInsights() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Current: <span className="font-medium text-foreground">₺{insight.currentSpend}</span></span>
-                    <span className="text-muted-foreground">Avg: <span className="font-medium text-foreground">₺{insight.averageSpend}</span></span>
+                    <span className="text-muted-foreground">{t('budgetPage.spent')}: <span className="font-medium text-foreground">{formatAmount(insight.currentSpend)}</span></span>
+                    <span className="text-muted-foreground">{t('dashboard.monthlyAverage')}: <span className="font-medium text-foreground">{formatAmount(insight.averageSpend)}</span></span>
                   </div>
 
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -123,11 +127,11 @@ export function AISpendingInsights() {
 
                   <div className="pt-2 border-t border-border/30 mt-2">
                     <p className="text-xs text-muted-foreground">
-                      <span className="text-primary font-medium">AI Tip:</span> {insight.aiRecommendation}
+                      <span className="text-primary font-medium">{t('ai.smart')}:</span> {t(insight.aiRecommendationKey)}
                     </p>
                     {insight.potentialSavings > 0 && (
                       <p className="text-xs text-success font-medium mt-1">
-                        Save up to ₺{insight.potentialSavings}/month
+                        {t('ai.saveUpTo', { amount: formatAmount(insight.potentialSavings) })}
                       </p>
                     )}
                   </div>

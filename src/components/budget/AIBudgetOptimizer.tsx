@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { BudgetCategory } from "@/data/budgetData";
 import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 interface AIBudgetOptimizerProps {
   currentCategories: BudgetCategory[];
@@ -20,6 +21,7 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
   const { token } = useAuth();
   const { toast } = useToast();
   const { t }     = useTranslation();
+  const { formatAmount } = usePreferences();
 
   const handleOptimize = async () => {
     setLoading(true);
@@ -94,11 +96,11 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
                 return (
                   <div key={cat.id} className="p-3 rounded-xl bg-muted/50 border border-border/50 flex justify-between items-center">
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">{cat.name}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">{t(`categories.${cat.id}`, { defaultValue: cat.name })}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs line-through opacity-50">₺{cat.allocated}</span>
+                        <span className="text-xs line-through opacity-50">{formatAmount(cat.allocated)}</span>
                         <ArrowRight className="w-3 h-3" />
-                        <span className="text-sm font-bold">₺{suggested.toFixed(0)}</span>
+                        <span className="text-sm font-bold">{formatAmount(suggested)}</span>
                       </div>
                     </div>
                     <div className={`text-[10px] font-bold px-2 py-1 rounded-full ${isSaving ? "bg-green-500/10 text-green-600" : "bg-primary/10 text-primary"}`}>

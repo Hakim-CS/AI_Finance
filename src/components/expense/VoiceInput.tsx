@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { usePreferences } from "@/context/PreferencesContext";
 
 type RecordingState = "idle" | "listening" | "stopped" | "processing" | "review";
 
@@ -26,6 +28,15 @@ export function VoiceInput() {
   const { toast } = useToast();
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { formatAmount, language } = usePreferences();
+
+  // Map language to speech recognition locale
+  const speechLocaleMap: Record<string, string> = {
+    tr: 'tr-TR',
+    en: 'en-US',
+    de: 'de-DE',
+  };
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -34,7 +45,7 @@ export function VoiceInput() {
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'tr-TR';
+    recognition.lang = speechLocaleMap[language] || 'en-US';
 
     recognition.onstart = () => setState("listening");
     
@@ -45,7 +56,7 @@ export function VoiceInput() {
 
     recognition.onerror = (event: any) => {
       if (event.error !== 'aborted') {
-        toast({ title: "Voice Error", description: event.error, variant: "destructive" });
+        toast({ title: t('common.error'), description: event.error, variant: "destructive" });
       }
       setState("idle");
     };
@@ -57,7 +68,7 @@ export function VoiceInput() {
     };
 
     recognitionRef.current = recognition;
-  }, [toast]);
+  }, [toast, language, t]);
 
   const toggleRecording = () => {
     if (!recognitionRef.current) return;
@@ -87,11 +98,10 @@ export function VoiceInput() {
       if (!response.ok) throw new Error('Parsing failed');
 
       const data = await response.json();
-      console.log("AI Parsed Data:", data);
       setParsedData(data);
       setState("review");
     } catch (error: any) {
-      toast({ title: "Analysis Failed", description: error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
       setState("stopped");
     }
   };
@@ -100,16 +110,8 @@ export function VoiceInput() {
     if (!parsedData || !token) return;
     setState("processing");
 
-    // Clean up the categoryId - if AI didn't find one, default to 'other'
     const finalCategoryId = parsedData.categoryId || "other";
     const finalAmount = Number(parsedData.amount);
-
-    console.log("Sending to Save:", {
-      amount: finalAmount,
-      categoryId: finalCategoryId,
-      description: parsedData.description,
-      date: parsedData.date,
-    });
 
     try {
       const response = await fetch(`${API_BASE}/expenses`, {
@@ -121,14 +123,14 @@ export function VoiceInput() {
         body: JSON.stringify({
           amount: finalAmount,
           categoryId: finalCategoryId,
-          description: parsedData.description || "Voice Expense",
+          description: parsedData.description || t('addExpensePage.voice.title'),
           date: new Date(parsedData.date).toISOString(),
           notes: parsedData.notes || "",
         }),
       });
 
       if (response.ok) {
-        toast({ title: "Success", description: "Expense recorded." });
+        toast({ title: t('common.success'), description: t('addExpensePage.manual.added') });
         queryClient.invalidateQueries({ queryKey: ['expenses'] });
         handleReset();
       } else {
@@ -136,7 +138,7 @@ export function VoiceInput() {
         throw new Error(err.message || "Save failed");
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
       setState("review");
     }
   };
@@ -150,8 +152,8 @@ export function VoiceInput() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-xl">Voice Input</CardTitle>
-        <CardDescription>Speak your expense (Turkish supported)</CardDescription>
+        <CardTitle className="text-xl">{t('addExpensePage.voice.title')}</CardTitle>
+        <CardDescription>{t('addExpensePage.voice.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-6">
         <Button
@@ -168,11 +170,11 @@ export function VoiceInput() {
         </Button>
 
         <p className="text-sm font-medium">
-          {state === "idle" && "Tap to start"}
-          {state === "listening" && "Listening..."}
-          {state === "stopped" && (transcript ? "Review Transcript" : "No speech detected")}
-          {state === "processing" && "Processing..."}
-          {state === "review" && "Verify AI Extraction"}
+          {state === "idle" && t('addExpensePage.voice.tapStart')}
+          {state === "listening" && t('addExpensePage.voice.listening')}
+          {state === "stopped" && (transcript ? t('common.reviewTranscript') : t('common.noSpeechDetected'))}
+          {state === "processing" && t('addExpensePage.voice.processing')}
+          {state === "review" && t('common.verifyExtraction')}
         </p>
 
         {transcript && (
@@ -184,21 +186,21 @@ export function VoiceInput() {
         {state === "review" && parsedData && (
           <div className="w-full space-y-4">
             <div className="p-4 bg-primary/5 border rounded-xl space-y-2 text-sm text-left">
-              <p><strong>Amount:</strong> ₺{parsedData.amount || '???'}</p>
-              <p><strong>Category:</strong> {parsedData.categoryId || 'Other'}</p>
-              <p><strong>Description:</strong> {parsedData.description}</p>
-              <p><strong>Date:</strong> {parsedData.date}</p>
+              <p><strong>{t('addExpensePage.manual.amount')}:</strong> {parsedData.amount ? formatAmount(parsedData.amount) : '???'}</p>
+              <p><strong>{t('addExpensePage.manual.category')}:</strong> {t(`categories.${parsedData.categoryId || 'other'}`)}</p>
+              <p><strong>{t('addExpensePage.manual.descriptionLabel')}:</strong> {parsedData.description}</p>
+              <p><strong>{t('addExpensePage.manual.date')}:</strong> {parsedData.date}</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleReset} className="flex-1">Discard</Button>
-              <Button onClick={handleSaveExpense} className="flex-1 gradient-primary" disabled={!parsedData.amount}>Save</Button>
+              <Button variant="outline" onClick={handleReset} className="flex-1">{t('common.discard')}</Button>
+              <Button onClick={handleSaveExpense} className="flex-1 gradient-primary" disabled={!parsedData.amount}>{t('common.save')}</Button>
             </div>
           </div>
         )}
 
         {state === "stopped" && transcript && !parsedData && (
           <Button onClick={handleProcessTranscript} className="w-full gradient-primary">
-            Analyze Voice
+            {t('common.analyze')}
           </Button>
         )}
       </CardContent>
