@@ -34,9 +34,10 @@ interface ChartCategoryData {
   icon?: string;
 }
 
-const DEFAULT_BUDGETS: Record<string, number> = {
-  food: 3000, transport: 1500, shopping: 2000, entertainment: 1000,
-  utilities: 2500, health: 1000, travel: 5000, other: 500,
+// Income-proportional default allocation percentages (matches backend logic)
+const DEFAULT_PERCENTAGES: Record<string, number> = {
+  food: 0.25, utilities: 0.20, transport: 0.10, shopping: 0.08,
+  entertainment: 0.05, health: 0.05, travel: 0.05, other: 0.02,
 };
 
 export default function Dashboard() {
@@ -54,6 +55,7 @@ export default function Dashboard() {
 
   // ── Real-time calculations ────────────────────────────────────────────────
   const monthlyIncome = Number(user?.income) || 0;
+  const savingTarget  = Number(user?.saving_target) || 0;
   const monthIdx = EN_MONTHS.indexOf(selectedMonth);
 
   const currentMonthExpenses = expenses?.filter(e => {
@@ -80,7 +82,12 @@ export default function Dashboard() {
 
   const getBudgetStatusData = () => {
     if (!categories || !expenses) return [];
-    const currentLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
+    // Build income-proportional defaults, then override with user's custom limits
+    const allocatable = Math.max(0, monthlyIncome - savingTarget);
+    const currentLimits: Record<string, number> = {};
+    for (const [catId, pct] of Object.entries(DEFAULT_PERCENTAGES)) {
+      currentLimits[catId] = Math.round(allocatable * pct);
+    }
     budgetLimits?.forEach(limit => { currentLimits[limit.categoryId] = Number(limit.limitAmount); });
 
     const monthlyCategoryTotals = currentMonthExpenses.reduce((acc, expense) => {
@@ -93,6 +100,7 @@ export default function Dashboard() {
       .filter(cat => cat.allocated > 0)
       .sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated));
   };
+
 
   const categoryData    = getAggregatedCategoryData();
   const budgetStatusData = getBudgetStatusData();

@@ -144,6 +144,8 @@ pool.connect()
       // Soft-delete columns ─ is_active=FALSE + deleted_at set = account in 14-day grace period
       await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS is_active   BOOLEAN NOT NULL DEFAULT TRUE`);
       await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS deleted_at  TIMESTAMP`);
+      // Monthly saving target — used by AI predictions and dashboard
+      await client.query(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS saving_target DECIMAL(12,2) NOT NULL DEFAULT 0`);
 
       // Backfill UserPreferences rows for any users who don't have one yet
       await client.query(`
@@ -352,7 +354,7 @@ app.get('/debug/routes', (req, res) => {
 app.get('/auth/me', protect, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, name, username, income, phone, avatar_url FROM "User" WHERE id = $1',
+      'SELECT id, email, name, username, income, saving_target, phone, avatar_url FROM "User" WHERE id = $1',
       [req.user?.id]
     );
     res.json(result.rows[0]);
@@ -373,16 +375,17 @@ app.get('/auth/me', protect, async (req, res) => {
 
 // PUT /auth/user — update profile fields (name, username, income, phone)
 app.put('/auth/user', protect, async (req, res) => {
-  const { income, name, username, phone } = req.body;
+  const { income, name, username, phone, saving_target } = req.body;
   try {
     const updates: string[] = [];
     const params: any[] = [];
     let idx = 1;
 
-    if (income    !== undefined) { updates.push(`income   = $${idx++}`); params.push(income); }
-    if (name      !== undefined) { updates.push(`name     = $${idx++}`); params.push(name); }
-    if (username  !== undefined) { updates.push(`username = $${idx++}`); params.push(username); }
-    if (phone     !== undefined) { updates.push(`phone    = $${idx++}`); params.push(phone); }
+    if (income        !== undefined) { updates.push(`income        = $${idx++}`); params.push(income); }
+    if (saving_target !== undefined) { updates.push(`saving_target = $${idx++}`); params.push(saving_target); }
+    if (name          !== undefined) { updates.push(`name          = $${idx++}`); params.push(name); }
+    if (username      !== undefined) { updates.push(`username      = $${idx++}`); params.push(username); }
+    if (phone         !== undefined) { updates.push(`phone         = $${idx++}`); params.push(phone); }
 
     if (updates.length === 0) {
       return res.status(400).json({ message: 'No fields provided to update' });
@@ -394,7 +397,7 @@ app.put('/auth/user', protect, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE "User" SET ${updates.join(', ')} WHERE id = $${idx}
-       RETURNING id, email, name, username, income, phone`,
+       RETURNING id, email, name, username, income, saving_target, phone`,
       params
     );
     console.log(`[Profile] Updated user ${req.user!.id}:`, Object.keys(req.body));
@@ -696,7 +699,7 @@ app.post('/auth/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO "User" (email, password_hash, name, username, income) VALUES ($1, $2, $3, $4, 0) RETURNING id, email, name, username, income',
+      'INSERT INTO "User" (email, password_hash, name, username, income, saving_target) VALUES ($1, $2, $3, $4, 0, 0) RETURNING id, email, name, username, income, saving_target',
       [email, hashedPassword, name, username]
     );
     const user = result.rows[0];
@@ -712,7 +715,7 @@ app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await pool.query(
-      `SELECT id, email, name, username, password_hash, income, phone, avatar_url,
+      `SELECT id, email, name, username, password_hash, income, saving_target, phone, avatar_url,
               is_active, deleted_at
        FROM "User" WHERE email = $1`,
       [email]
@@ -740,7 +743,7 @@ app.post('/auth/login', async (req, res) => {
           deletion_date: deletionDate,
           user: {
             id: user.id, email: user.email, name: user.name, username: user.username,
-            income: user.income, phone: user.phone, avatar_url: user.avatar_url,
+            income: user.income, saving_target: user.saving_target, phone: user.phone, avatar_url: user.avatar_url,
           },
         });
       }
@@ -750,7 +753,7 @@ app.post('/auth/login', async (req, res) => {
         token,
         user: {
           id: user.id, email: user.email, name: user.name, username: user.username,
-          income: user.income, phone: user.phone, avatar_url: user.avatar_url,
+          income: user.income, saving_target: user.saving_target, phone: user.phone, avatar_url: user.avatar_url,
         },
       });
     }
@@ -813,8 +816,8 @@ app.get('/ai/insights', protect, async (req, res) => {
         insights.push({
           type: "prediction",
           title: "End-of-Month Forecast",
-          description: `Based on your spending velocity, you're on track to have ₺${remaining.toFixed(0)} remaining by month end.`,
-          value: `₺${remaining.toFixed(0)}`,
+          description: `Based on your spending velocity, you're on track to have ${remaining.toFixed(0)} remaining by month end.`,
+          value: remaining.toFixed(0),
           confidence: 85,
           trend: { value: Math.round((remaining / income) * 100), isPositive: true }
         });
@@ -822,8 +825,8 @@ app.get('/ai/insights', protect, async (req, res) => {
         insights.push({
           type: "warning",
           title: "Over-Budget Prediction",
-          description: `You are on pace to exceed your income by ₺${Math.abs(remaining).toFixed(0)}. Consider reducing non-essential spending.`,
-          value: `₺${Math.abs(remaining).toFixed(0)}`,
+          description: `You are on pace to exceed your income by ${Math.abs(remaining).toFixed(0)}. Consider reducing non-essential spending.`,
+          value: Math.abs(remaining).toFixed(0),
           confidence: 92,
           actionLabel: "View Budget"
         });
@@ -881,7 +884,7 @@ app.get('/ai/insights', protect, async (req, res) => {
       insights.push({
         type: "warning",
         title: "Large Transaction Detected",
-        description: `We noticed an unusual ₺${Number(recentAnomalies[0].amount).toFixed(0)} purchase in '${recentAnomalies[0].categoryId}'. Was this expected?`,
+        description: `We noticed an unusual ${Number(recentAnomalies[0].amount).toFixed(0)} purchase in '${recentAnomalies[0].categoryId}'. Was this expected?`,
         confidence: 88,
         actionLabel: "Verify"
       });
@@ -908,8 +911,8 @@ app.get('/ai/insights', protect, async (req, res) => {
       insights.push({
         type: "tip",
         title: "Subscription Identified",
-        description: `AI detected recurring payments for '${sub[0]}'. You've spent ₺${(sub[1].amounts.reduce((a, b) => a + b)).toFixed(0)} on this total.`,
-        value: `₺${(sub[1].amounts[0]).toFixed(0)}/mo`,
+        description: `AI detected recurring payments for '${sub[0]}'. You've spent ${(sub[1].amounts.reduce((a, b) => a + b)).toFixed(0)} on this total.`,
+        value: `${(sub[1].amounts[0]).toFixed(0)}/mo`,
         confidence: 95,
         actionLabel: "Manage"
       });
@@ -939,8 +942,8 @@ app.get('/ai/insights', protect, async (req, res) => {
       finalInsights.push({
         type: "action",
         title: "Smart Savings Opportunity",
-        description: `Based on your income, setting aside ₺${(income * 0.1).toFixed(0)} (10%) right now would bolster your safety net.`,
-        value: `₺${(income * 0.1).toFixed(0)}`,
+        description: `Based on your income, setting aside ${(income * 0.1).toFixed(0)} (10%) right now would bolster your safety net.`,
+        value: (income * 0.1).toFixed(0),
         confidence: 80,
         actionLabel: "Save Now"
       });
@@ -957,19 +960,54 @@ app.get('/ai/insights', protect, async (req, res) => {
 // AI BUDGET PREDICTIONS
 app.get('/ai/budget-predictions', protect, async (req, res) => {
   const userId = req.user?.id;
-  const DEFAULT_BUDGETS: Record<string, number> = {
-    food: 3000, transport: 1500, shopping: 2000, entertainment: 1000,
-    utilities: 2500, health: 1000, travel: 5000, other: 500
+
+  // Income-proportional default allocation percentages (total = 80%, 20% left for savings)
+  const DEFAULT_PERCENTAGES: Record<string, number> = {
+    food: 0.25,           // 25%
+    utilities: 0.20,      // 20%
+    transport: 0.10,      // 10%
+    shopping: 0.08,       // 8%
+    entertainment: 0.05,  // 5%
+    health: 0.05,         // 5%
+    travel: 0.05,         // 5%
+    other: 0.02,          // 2%
   };
 
   try {
-    // 0. Fetch user's custom budget limits
+    // 0. Fetch user income + saving target
+    const userRes = await pool.query('SELECT income, saving_target FROM "User" WHERE id = $1', [userId]);
+    const income = Number(userRes.rows[0]?.income) || 0;
+    const savingTarget = Number(userRes.rows[0]?.saving_target) || 0;
+
+    if (income <= 0) {
+      return res.json([]); // No income set — can't make meaningful predictions
+    }
+
+    // Allocatable budget = income minus saving target
+    const allocatable = Math.max(0, income - savingTarget);
+
+    // Build budget limits: start from income-proportional defaults
+    const userLimits: Record<string, number> = {};
+    for (const [catId, pct] of Object.entries(DEFAULT_PERCENTAGES)) {
+      userLimits[catId] = Math.round(allocatable * pct);
+    }
+
+    // Override with user's custom budget limits if they've set them
     const budgetResult = await pool.query('SELECT "categoryId", "limitAmount" FROM "Budget" WHERE "userId" = $1', [userId]);
-    const userLimits: Record<string, number> = { ...DEFAULT_BUDGETS };
     budgetResult.rows.forEach(row => {
       userLimits[row.categoryId] = Number(row.limitAmount);
     });
 
+    // CRITICAL: Cap total budget allocations to never exceed income
+    const totalBudget = Object.values(userLimits).reduce((s, v) => s + v, 0);
+    if (totalBudget > income && income > 0) {
+      const scaleFactor = income / totalBudget;
+      for (const key in userLimits) {
+        userLimits[key] = Math.round(userLimits[key] * scaleFactor);
+      }
+    }
+
+    // Fetch expenses
     const expResult = await pool.query(
       'SELECT amount, "categoryId", date FROM "Expense" WHERE "userId" = $1 ORDER BY date DESC',
       [userId]
@@ -979,7 +1017,7 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const dayOfMonth = Math.max(1, now.getDate()); // Prevent division by zero
+    const dayOfMonth = Math.max(1, now.getDate());
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     // 1. Current Month Spending per Category
@@ -990,44 +1028,48 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
 
     const currentCatTotals: Record<string, number> = {};
     currentMonthExps.forEach(e => {
-      const catId = e.categoryId; // Matching "categoryId" from SQL
+      const catId = e.categoryId;
       currentCatTotals[catId] = (currentCatTotals[catId] || 0) + Number(e.amount);
     });
 
     // 2. Generate Predictions
     const predictions = Object.entries(userLimits).map(([catId, budgetLimit]) => {
       const spentSoFar = currentCatTotals[catId] || 0;
-      // Simple velocity prediction: (spent / days_passed) * total_days
+      // Velocity prediction: (spent / days_passed) * total_days
       const predictedSpend = Math.round((spentSoFar / dayOfMonth) * daysInMonth);
 
       let riskLevel: "low" | "medium" | "high" = "low";
       let suggestion = "You're doing great! Keep it up.";
 
-      const percentOfBudget = (predictedSpend / budgetLimit) * 100;
+      const percentOfBudget = budgetLimit > 0 ? (predictedSpend / budgetLimit) * 100 : 0;
 
       if (percentOfBudget > 110) {
         riskLevel = "high";
-        suggestion = `Predicting ₺${predictedSpend - budgetLimit} over budget. Consider reducing ${catId} spending by 15%.`;
+        const overAmount = predictedSpend - budgetLimit;
+        suggestion = `Projected ${overAmount.toLocaleString()} over budget. Consider reducing ${catId} spending by 15%.`;
       } else if (percentOfBudget > 90) {
         riskLevel = "medium";
         suggestion = `You're close to the limit. Watch your ${catId} purchases for the rest of the month.`;
       } else {
         riskLevel = "low";
-        suggestion = `On track to save ₺${budgetLimit - predictedSpend} in this category. Well done!`;
+        const savedAmount = budgetLimit - predictedSpend;
+        suggestion = `On track to save ${savedAmount.toLocaleString()} in this category. Well done!`;
       }
 
-      // Add category-specific flavor to suggestions
+      // Category-specific tips for high-risk items
       if (riskLevel === "high") {
         if (catId === "food") suggestion = "Try cooking at home more often to lower your food costs.";
         if (catId === "shopping") suggestion = "Avoid impulse buys. Wait 24 hours before any new shopping.";
         if (catId === "transport") suggestion = "Look for cheaper transport options or carpool this week.";
+        if (catId === "entertainment") suggestion = "Consider free activities or pause subscriptions this month.";
+        if (catId === "utilities") suggestion = "Review recurring bills for savings opportunities.";
       }
 
       return {
         category: catId.charAt(0).toUpperCase() + catId.slice(1),
-        predictedSpend: Math.max(spentSoFar, predictedSpend), // Don't predict less than already spent
+        predictedSpend: Math.max(spentSoFar, predictedSpend),
         budgetLimit,
-        confidence: Math.min(98, 60 + (dayOfMonth * 1.2)), // Confidence grows as month progresses
+        confidence: Math.min(98, 60 + (dayOfMonth * 1.2)),
         riskLevel,
         suggestion
       };
@@ -1042,7 +1084,7 @@ app.get('/ai/budget-predictions', protect, async (req, res) => {
       return b.predictedSpend - a.predictedSpend;
     });
 
-    res.json(predictions.slice(0, 4)); // Return top 4 most relevant
+    res.json(predictions.slice(0, 4));
 
   } catch (error: any) {
     console.error(`[AI Budget Prediction Error]`, error);
@@ -1143,27 +1185,73 @@ app.delete('/expenses/:id', protect, async (req, res) => {
   }
 });
 
-// VOICE PARSING
-const categories_list = [
-  { id: "food", name: "Food" }, { id: "transport", name: "Transport" },
-  { id: "entertainment", name: "Entertainment" }, { id: "shopping", name: "Shopping" },
-  { id: "utilities", name: "Utilities" }, { id: "health", name: "Health" },
-  { id: "travel", name: "Travel" }, { id: "other", name: "Other" }
-];
+// ── MULTI-LANGUAGE KEYWORD MAP (shared by voice + receipt parsing) ───────────
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  food: [
+    // English
+    "food", "eat", "lunch", "dinner", "breakfast", "restaurant", "cafe", "coffee",
+    "grocery", "snack", "pizza", "burger", "sushi", "bakery", "diner",
+    "walmart", "costco", "trader joe", "whole foods", "starbucks", "mcdonald", "subway",
+    // Turkish
+    "yemek", "restoran", "lokanta", "kahve", "simit", "corba", "kebap", "mutfak",
+    "migros", "bim", "sok", "carrefour", "a101", "firin", "pastane",
+    // German
+    "essen", "fruhstuck", "mittagessen", "abendessen", "kaffee", "backerei",
+    "supermarkt", "edeka", "aldi", "lidl", "rewe", "netto", "penny",
+  ],
+  transport: [
+    "transport", "taxi", "uber", "lyft", "bus", "train", "gas", "fuel", "parking", "toll",
+    "benzin", "otobus", "taksi", "metro", "akbil", "yakit", "otopark", "kopru",
+    "shell", "opet", "bp", "petrol", "marmaray",
+    "zug", "bahn", "fahrt", "tanken", "fahrkarte", "tankstelle",
+  ],
+  shopping: [
+    "shopping", "clothes", "shoes", "amazon", "online", "store", "mall",
+    "market", "alisveris", "kiyafet", "ayakkabi", "fatura", "avm",
+    "h&m", "zara", "boyner", "gratis", "watsons", "rossmann", "lcw", "koton", "flo", "decathlon", "ikea",
+    "einkaufen", "kleidung", "schuhe", "kaufhaus",
+  ],
+  entertainment: [
+    "movie", "cinema", "game", "netflix", "spotify", "concert", "theater", "ticket", "stream",
+    "sinema", "tiyatro", "konser", "oyun", "eglence", "pub", "bar",
+    "kino", "spiel", "konzert", "unterhaltung", "veranstaltung",
+  ],
+  utilities: [
+    "electricity", "water", "gas", "internet", "phone", "rent", "bill", "insurance", "subscription",
+    "su", "elektrik", "dogalgaz", "kira", "aidat", "turkcell", "vodafone", "telekom",
+    "strom", "wasser", "miete", "rechnung", "versicherung", "telefon",
+  ],
+  health: [
+    "doctor", "pharmacy", "medicine", "hospital", "dental", "clinic", "health",
+    "eczane", "doktor", "ilac", "hastane", "saglik", "disci", "optik",
+    "arzt", "apotheke", "medizin", "krankenhaus", "zahnarzt", "gesundheit",
+  ],
+  travel: [
+    "flight", "hotel", "vacation", "booking", "airbnb", "trip", "airport", "luggage",
+    "ucak", "otel", "tatil", "bilet", "pasaport", "konaklama", "thy", "pegasus",
+    "flug", "reise", "urlaub", "flugreise", "gepack",
+  ],
+};
 
+// ── VOICE PARSING ───────────────────────────────────────────────────────────
 app.post('/expenses/parse-voice', protect, async (req, res) => {
   const { transcript } = req.body;
-  let amount = null;
+  let amount: number | null = null;
   let categoryId = "other";
   let description = transcript;
   let date = new Date().toISOString().split('T')[0];
 
-  const amountMatch = transcript.match(/(\d+)/);
-  if (amountMatch) amount = parseFloat(amountMatch[0]);
+  // Extract amount: handle decimals like "25.50", "100,99", and plain integers "50"
+  const amountMatch = transcript.match(/(\d+([.,]\d{1,2})?)/);
+  if (amountMatch) {
+    amount = parseFloat(amountMatch[0].replace(',', '.'));
+  }
 
-  for (const cat of categories_list) {
-    if (transcript.toLowerCase().includes(cat.id)) {
-      categoryId = cat.id;
+  // Match category using multi-language keywords
+  const lowerTranscript = transcript.toLowerCase();
+  for (const [catId, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => lowerTranscript.includes(kw))) {
+      categoryId = catId;
       break;
     }
   }
@@ -1171,36 +1259,35 @@ app.post('/expenses/parse-voice', protect, async (req, res) => {
   res.json({ amount, categoryId, description, date });
 });
 
+// ── RECEIPT PARSING ─────────────────────────────────────────────────────────
 app.post('/expenses/parse-receipt', protect, async (req, res) => {
   const { text } = req.body;
-  let amount = null;
+  let amount: number | null = null;
   let categoryId = "other";
   let description = "Receipt Expense";
   let date = new Date().toISOString().split('T')[0];
 
+  // Normalize: lowercase + strip Turkish special characters + asterisks
   const normalizedText = text.toLowerCase()
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
+    .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+    .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .replace(/ä/g, 'a').replace(/ß/g, 'ss')  // German chars
     .replace(/\*/g, '');
 
-  // Strategy A: Look for "TOPLAM", "TUTAR" or "TOTAL" followed by a price format
-  // Handles formats like "TOPLAM 756,37" or "TUTAR: 120.00"
-  const totalMatch = normalizedText.match(/(toplam|tutar|total|ara toplam|top)\s*[:=]*\s*(\d{1,5}([.,]\d{2})?)/);
+  // Strategy A: Look for total keywords (EN/TR/DE) followed by a price
+  const totalMatch = normalizedText.match(
+    /(toplam|tutar|total|subtotal|amount|due|summe|betrag|gesamt|gesamtbetrag|ara toplam|top)\s*[:=]*\s*(\d{1,6}([.,]\d{2})?)/
+  );
 
   if (totalMatch) {
     amount = parseFloat(totalMatch[2].replace(',', '.'));
   } else {
-    // Strategy B: Find all potential prices (numbers with 2 decimals) and take the highest
-    // This ignores barcodes which are usually long integers or don't follow price formatting
+    // Strategy B: Find all potential prices and take the highest
     const priceMatches = normalizedText.match(/\d+([.,]\d{2})/g);
     if (priceMatches) {
       const prices = priceMatches
         .map((m: string) => parseFloat(m.replace(',', '.')))
-        .filter((n: number) => n > 0 && n < 30000); // filter out numbers that are too large --> likely barcodes or ids
+        .filter((n: number) => n > 0 && n < 50000);
 
       if (prices.length > 0) {
         amount = Math.max(...prices);
@@ -1208,18 +1295,8 @@ app.post('/expenses/parse-receipt', protect, async (req, res) => {
     }
   }
 
-  // 2. REFINED KEYWORD SEARCH
-  const categoryKeywords: Record<string, string[]> = {
-    food: ["yemek", "restoran", "lokanta", "kahve", "simit", "corba", "kebap", "burger", "pizza", "mutfak", "migros", "bim", "sok", "carrefour", "a101", "firin", "pastane"],
-    shopping: ["market", "alisveris", "kıyafet", "ayakkabı", "fatura", "avm", "h&m", "zara", "boyner", "gratis", "watsons", "rossmann", "lcw", "koton", "flo", "decathlon", "ikea"],
-    transport: ["benzin", "otobus", "taksi", "metro", "akbil", "yakit", "otopark", "kopru", "shell", "opet", "bp", "total", "petrol", "marmaray"],
-    utilities: ["su", "elektrik", "dogalgaz", "internet", "telefon", "kira", "aidat", "turkcell", "vodafone", "telekom"],
-    health: ["eczane", "doktor", "ilac", "hastane", "saglik", "disci", "optik"],
-    entertainment: ["sinema", "tiyatro", "konser", "oyun", "netflix", "spotify", "eglence", "pub", "bar"],
-    travel: ["ucak", "otel", "tatil", "bilet", "pasaport", "konaklama", "thy", "pegasus", "booking", "airbnb"]
-  };
-
-  for (const [id, keywords] of Object.entries(categoryKeywords)) {
+  // Category matching using multi-language keywords
+  for (const [id, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (keywords.some(keyword => normalizedText.includes(keyword))) {
       categoryId = id;
       break;
@@ -1238,9 +1315,13 @@ app.get('/expenses/history', protect, async (req, res) => {
       [userId]
     );
 
-    // fetch current total budget
+    // fetch current total budget and user income for the budget reference line
     const budgetResult = await pool.query('SELECT SUM("limitAmount") as "totalBudget" FROM "Budget" WHERE "userId" = $1', [userId]);
-    const currentTotalBudget = Number(budgetResult.rows[0]?.totalBudget) || 10500;
+    const userRes = await pool.query('SELECT income FROM "User" WHERE id = $1', [userId]);
+    const userIncome = Number(userRes.rows[0]?.income) || 0;
+    const sumBudget = Number(budgetResult.rows[0]?.totalBudget) || 0;
+    // Prefer income as the reference; fall back to budget sum if income isn't set
+    const monthlyBudget = userIncome > 0 ? userIncome : (sumBudget > 0 ? sumBudget : 0);
 
     const expenses = result.rows;
 
@@ -1264,7 +1345,7 @@ app.get('/expenses/history', protect, async (req, res) => {
           monthKey, // "2026-03"
           month: dateObj.toLocaleString('default', { month: 'short' }), // "Mar"
           spent: amount,
-          budget: currentTotalBudget
+          budget: monthlyBudget
         };
       })
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));

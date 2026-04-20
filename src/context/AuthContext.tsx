@@ -10,6 +10,7 @@ export interface User {
   username?: string;
   phone?: string;
   income?: number;
+  saving_target?: number;
   avatar_url?: string;
 }
 

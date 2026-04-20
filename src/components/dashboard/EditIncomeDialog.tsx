@@ -14,6 +14,7 @@ import { formatNumberInput, unformatNumberInput } from "@/hooks/useFormattedNumb
 export function EditIncomeDialog() {
   const { user, token, updateUser } = useAuth();
   const [income, setIncome] = useState(user?.income?.toString() || "0");
+  const [savingTarget, setSavingTarget] = useState(user?.saving_target?.toString() || "0");
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -25,24 +26,42 @@ export function EditIncomeDialog() {
     if (!token) return;
     setIsSaving(true);
     try {
+      const parsedIncome = parseFloat(unformatNumberInput(income));
+      const parsedSaving = parseFloat(unformatNumberInput(savingTarget));
+
+      // Validate: saving target can't exceed income
+      if (parsedSaving > parsedIncome) {
+        toast({
+          title: t('common.error'),
+          description: t('settings.profile.savingExceedsIncome'),
+          variant: "destructive"
+        });
+        setIsSaving(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/auth/user`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ income: parseFloat(unformatNumberInput(income)) }),
+        body: JSON.stringify({
+          income: parsedIncome,
+          saving_target: parsedSaving,
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to update income");
+      if (!response.ok) throw new Error("Failed to update");
 
       const updatedUser = await response.json();
       updateUser({
         ...user!,
-        income: parseFloat(unformatNumberInput(updatedUser.income.toString()))
+        income: parseFloat(updatedUser.income?.toString() || "0"),
+        saving_target: parseFloat(updatedUser.saving_target?.toString() || "0"),
       });
       
-      toast({ title: t('common.success'), description: t('settings.profile.monthlyIncome') });
+      toast({ title: t('common.success'), description: t('settings.profile.financialSettingsUpdated') });
       setIsOpen(false);
     } catch (error: any) {
       toast({ title: t('common.error'), description: error.message, variant: "destructive" });
@@ -60,9 +79,9 @@ export function EditIncomeDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('settings.profile.monthlyIncome')}</DialogTitle>
+          <DialogTitle>{t('settings.profile.financialSettings')}</DialogTitle>
           <DialogDescription>
-            {t('settings.profile.monthlyIncome')}
+            {t('settings.profile.financialSettingsDesc')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -76,6 +95,20 @@ export function EditIncomeDialog() {
               onChange={(e) => setIncome(formatNumberInput(e.target.value))}
               placeholder="e.g. 5,200"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="savingTarget">{t('settings.profile.savingTarget')} ({currencySymbol})</Label>
+            <Input
+              id="savingTarget"
+              type="text"
+              inputMode="decimal"
+              value={savingTarget}
+              onChange={(e) => setSavingTarget(formatNumberInput(e.target.value))}
+              placeholder="e.g. 1,000"
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('settings.profile.savingTargetHint')}
+            </p>
           </div>
         </div>
         <DialogFooter>

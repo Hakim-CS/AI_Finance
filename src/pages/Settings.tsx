@@ -43,6 +43,7 @@ const profileSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, underscores only"),
   phone: z.string().max(20).optional().or(z.literal("")),
   income: z.string().refine(v => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, "Must be ≥ 0"),
+  saving_target: z.string().refine(v => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, "Must be ≥ 0"),
 });
 
 const passwordSchema = z.object({
@@ -199,6 +200,9 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
   const [incomeDisplay, setIncomeDisplay] = useState(
     user?.income ? formatNumberForDisplay(user.income) : ""
   );
+  const [savingTargetDisplay, setSavingTargetDisplay] = useState(
+    user?.saving_target ? formatNumberForDisplay(user.saving_target) : ""
+  );
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -207,6 +211,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       username: user?.username || "",
       phone: user?.phone || "",
       income: user?.income?.toString() || "0",
+      saving_target: user?.saving_target?.toString() || "0",
     },
   });
 
@@ -217,8 +222,10 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
       username: user?.username || "",
       phone: user?.phone || "",
       income: user?.income?.toString() || "0",
+      saving_target: user?.saving_target?.toString() || "0",
     });
     setIncomeDisplay(user?.income ? formatNumberForDisplay(user.income) : "");
+    setSavingTargetDisplay(user?.saving_target ? formatNumberForDisplay(user.saving_target) : "");
   }, [user]);
 
   const onSubmit = async (values: ProfileValues) => {
@@ -232,6 +239,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
           username: values.username,
           phone: values.phone || null,
           income: parseFloat(values.income),
+          saving_target: parseFloat(values.saving_target),
         }),
       });
       updateUser({ ...user!, ...updated });
@@ -246,6 +254,7 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
   };
 
   const incomeVal = Number(user?.income) || 0;
+  const savingTargetVal = Number(user?.saving_target) || 0;
 
   // ── Step 1: file chosen → open cropper modal ───────────────────────────────
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -423,8 +432,8 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: t('settings.profile.monthlyIncome'), value: formatAmount(incomeVal) },
-              { label: t('settings.profile.savingsTarget'), value: formatAmount(Math.round(incomeVal * 0.20)) },
-              { label: t('settings.profile.dailyBudget'), value: formatAmount(Math.round(incomeVal / 30)) },
+              { label: t('settings.profile.savingTarget'), value: formatAmount(savingTargetVal) },
+              { label: t('settings.profile.dailyBudget'), value: formatAmount(Math.round((incomeVal - savingTargetVal) / 30)) },
             ].map(({ label, value }) => (
               <div key={label} className="bg-muted/50 border border-border rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -465,6 +474,43 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                         />
                       </div>
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField control={form.control} name="saving_target"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      {t('settings.profile.savingTarget')} ({CURRENCIES[prefs.currency]?.symbol ?? '₺'})
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold select-none">
+                          {CURRENCIES[prefs.currency]?.symbol ?? '₺'}
+                        </span>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={savingTargetDisplay}
+                          placeholder="1,000"
+                          className="h-10 rounded-xl pl-7 font-bold"
+                          onChange={(e) => {
+                            const raw = unformatNumberInput(e.target.value);
+                            const formatted = formatNumberInput(raw);
+                            setSavingTargetDisplay(formatted);
+                            field.onChange(raw);
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </div>
+                    </FormControl>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t('settings.profile.savingTargetHint')}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
