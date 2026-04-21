@@ -47,9 +47,9 @@ budgetRoutes.get('/budget/optimize', protect, async (req, res) => {
 
     console.log(`[AI Optimizer] Running for User ${userId} with Income: ${userIncome}`);
 
-    const scriptPath = path.join(__dirname, '../../AI/optimize.py');
+    const scriptPath = path.join(__dirname, '../../../AI/optimize.py');
 
-    exec(`python "${scriptPath}" ${userIncome}`, { cwd: path.join(__dirname, '../../AI') }, (error, stdout, stderr) => {
+    exec(`python "${scriptPath}" ${userIncome}`, { cwd: path.join(__dirname, '../../../AI') }, (error, stdout, stderr) => {
       if (error) {
         console.error(`Exec error: ${error}`);
         return res.status(500).json({ message: "AI Optimization failed" });
