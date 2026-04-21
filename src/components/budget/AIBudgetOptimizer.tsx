@@ -29,8 +29,8 @@ export function AIBudgetOptimizer({ currentCategories, onApply }: AIBudgetOptimi
       const response = await fetch(`${API_BASE}/budget/optimize`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error(t("common.error"));
       const data = await response.json();
+      if (!response.ok) throw new Error(data.message || t("common.error"));
       setOptimizedData(data);
     } catch (error: any) {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
