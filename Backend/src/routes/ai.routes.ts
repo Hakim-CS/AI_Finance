@@ -251,7 +251,7 @@ aiRoutes.get('/ai/budget-predictions', protect, async (req, res) => {
       }
     }
 
-    // Fetch expenses
+    // Fetch ALL expenses (for historical context)
     const expResult = await pool.query(
       'SELECT amount, "categoryId", date FROM "Expense" WHERE "userId" = $1 ORDER BY date DESC',
       [userId]
@@ -276,44 +276,99 @@ aiRoutes.get('/ai/budget-predictions', protect, async (req, res) => {
       currentCatTotals[catId] = (currentCatTotals[catId] || 0) + Number(e.amount);
     });
 
-    // 2. Generate Predictions
+    // 2. Last Month Spending (fallback for new-month predictions)
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const lastMonthExps = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    });
+    const lastCatTotals: Record<string, number> = {};
+    lastMonthExps.forEach(e => {
+      const catId = e.categoryId;
+      lastCatTotals[catId] = (lastCatTotals[catId] || 0) + Number(e.amount);
+    });
+
+    // DATA VOLUME: How many expenses does the user actually have this month?
+    const currentMonthCount = currentMonthExps.length;
+    const hasCurrentData = currentMonthCount >= 3;        // meaningful velocity data
+    const hasHistoricalData = lastMonthExps.length >= 3;  // meaningful historical baseline
+
+    // 3. Generate Predictions
     const predictions = Object.entries(userLimits).map(([catId, budgetLimit]) => {
       const spentSoFar = currentCatTotals[catId] || 0;
-      // Velocity prediction: (spent / days_passed) * total_days
-      const predictedSpend = Math.round((spentSoFar / dayOfMonth) * daysInMonth);
+      const lastMonthSpent = lastCatTotals[catId] || 0;
 
+      // PREDICTION STRATEGY:
+      // A) If we have current-month data → velocity extrapolation
+      // B) If we only have last month data → use that as baseline
+      // C) If no data at all → return budget limit as predicted (defer to budget)
+      let predictedSpend: number;
+      let predictionBasis: string;
+
+      if (spentSoFar > 0 && hasCurrentData) {
+        // Strategy A: Velocity-based projection from current month
+        predictedSpend = Math.round((spentSoFar / dayOfMonth) * daysInMonth);
+        predictionBasis = "velocity";
+      } else if (lastMonthSpent > 0 && hasHistoricalData) {
+        // Strategy B: Use last month as baseline estimate
+        predictedSpend = Math.round(lastMonthSpent);
+        predictionBasis = "historical";
+      } else {
+        // Strategy C: No data — predicted spend is 0 (honest)
+        predictedSpend = 0;
+        predictionBasis = "none";
+      }
+
+      // Risk assessment
       let riskLevel: "low" | "medium" | "high" = "low";
-      let suggestion = "You're doing great! Keep it up.";
+      let suggestion: string;
 
       const percentOfBudget = budgetLimit > 0 ? (predictedSpend / budgetLimit) * 100 : 0;
 
-      if (percentOfBudget > 110) {
+      if (predictionBasis === "none") {
+        // ── NO DATA: Give helpful onboarding guidance, not fake insights ──
+        riskLevel = "low";
+        suggestion = `Budget set to ${budgetLimit.toLocaleString()}. Start adding expenses to get personalized predictions.`;
+      } else if (percentOfBudget > 110) {
         riskLevel = "high";
         const overAmount = predictedSpend - budgetLimit;
-        suggestion = `Projected ${overAmount.toLocaleString()} over budget. Consider reducing ${catId} spending by 15%.`;
-      } else if (percentOfBudget > 90) {
-        riskLevel = "medium";
-        suggestion = `You're close to the limit. Watch your ${catId} purchases for the rest of the month.`;
-      } else {
-        riskLevel = "low";
-        const savedAmount = budgetLimit - predictedSpend;
-        suggestion = `On track to save ${savedAmount.toLocaleString()} in this category. Well done!`;
-      }
+        suggestion = `Projected ${overAmount.toLocaleString()} over budget. Consider reducing ${catId} spending.`;
 
-      // Category-specific tips for high-risk items
-      if (riskLevel === "high") {
+        // Category-specific tips for high-risk items
         if (catId === "food") suggestion = "Try cooking at home more often to lower your food costs.";
         if (catId === "shopping") suggestion = "Avoid impulse buys. Wait 24 hours before any new shopping.";
         if (catId === "transport") suggestion = "Look for cheaper transport options or carpool this week.";
         if (catId === "entertainment") suggestion = "Consider free activities or pause subscriptions this month.";
         if (catId === "utilities") suggestion = "Review recurring bills for savings opportunities.";
+      } else if (percentOfBudget > 80) {
+        riskLevel = "medium";
+        suggestion = `Nearing the limit. Watch your ${catId} purchases for the rest of the month.`;
+      } else if (spentSoFar > 0) {
+        riskLevel = "low";
+        const savedAmount = budgetLimit - predictedSpend;
+        suggestion = `On track to save ${savedAmount.toLocaleString()} in this category this month.`;
+      } else {
+        riskLevel = "low";
+        suggestion = `No ${catId} spending recorded yet this month.`;
       }
+
+      // CONFIDENCE: Factor in BOTH data volume AND month progress
+      // Data factor (0-60): based on actual number of expenses in this category
+      const catExpenseCount = currentMonthExps.filter(e => e.categoryId === catId).length;
+      const dataFactor = Math.min(60, catExpenseCount * 12); // 5 expenses = 60%
+      // Time factor (0-38): how far into the month we are
+      const timeFactor = Math.round((dayOfMonth / daysInMonth) * 38);
+      // Confidence = data weight + time weight (max 98%)
+      const confidence = predictionBasis === "none"
+        ? 0   // Honest: 0% confidence when we have NO data
+        : Math.min(98, dataFactor + timeFactor);
 
       return {
         category: catId.charAt(0).toUpperCase() + catId.slice(1),
         predictedSpend: Math.max(spentSoFar, predictedSpend),
         budgetLimit,
-        confidence: Math.min(98, 60 + (dayOfMonth * 1.2)),
+        confidence: parseFloat(confidence.toFixed(1)),
         riskLevel,
         suggestion
       };

@@ -56,6 +56,19 @@ budgetRoutes.get('/budget/optimize', protect, async (req, res) => {
     // The maximum budget AI can allocate = income minus saving target (min 50% of income)
     const budgetCeiling = Math.max(userIncome * 0.5, userIncome - savingTarget);
 
+    // Sensible minimum percentages per category (of budgetCeiling)
+    // These act as floors — if the AI suggests less, we use the floor
+    const MINIMUM_PERCENTAGES: Record<string, number> = {
+      food: 0.15,           // At least 15%
+      utilities: 0.10,      // At least 10%
+      transport: 0.08,      // At least 8%
+      shopping: 0.05,       // At least 5%
+      entertainment: 0.03,  // At least 3%
+      health: 0.03,         // At least 3%
+      travel: 0.03,         // At least 3%
+      other: 0.02,          // At least 2%
+    };
+
     console.log(`[AI Optimizer] User ${userId} | Income: ${userIncome} | Saving: ${savingTarget} | Ceiling: ${budgetCeiling}`);
 
     const scriptPath = path.join(__dirname, '../../../AI/optimize.py');
@@ -81,18 +94,27 @@ budgetRoutes.get('/budget/optimize', protect, async (req, res) => {
           other: rawAiResult["Other"] || 0
         };
 
-        // CRITICAL: Scale predictions so total never exceeds budget ceiling
-        const rawTotal = Object.values(mappedResults).reduce((s, v) => s + v, 0);
+        // STEP 1: Enforce minimum floors — XGBoost extrapolates poorly for out-of-range incomes
+        // If the AI suggests less than the floor, raise it to the floor
+        for (const [catId, minPct] of Object.entries(MINIMUM_PERCENTAGES)) {
+          const floor = budgetCeiling * minPct;
+          if (mappedResults[catId] < floor) {
+            console.log(`[AI Optimizer] Floor applied: ${catId} raised from ${mappedResults[catId].toFixed(0)} to ${floor.toFixed(0)}`);
+            mappedResults[catId] = floor;
+          }
+        }
 
-        if (rawTotal > 0) {
-          const scaleFactor = Math.min(1, budgetCeiling / rawTotal);
+        // STEP 2: Scale total to fit within budget ceiling
+        const totalAfterFloors = Object.values(mappedResults).reduce((s, v) => s + v, 0);
+        if (totalAfterFloors > 0) {
+          const scaleFactor = budgetCeiling / totalAfterFloors;
           for (const key of Object.keys(mappedResults)) {
             mappedResults[key] = Math.round(mappedResults[key] * scaleFactor);
           }
         }
 
-        const cappedTotal = Object.values(mappedResults).reduce((s, v) => s + v, 0);
-        console.log(`[AI Optimizer] Raw total: ${rawTotal.toFixed(0)} → Capped to: ${cappedTotal} (ceiling: ${budgetCeiling})`);
+        const finalTotal = Object.values(mappedResults).reduce((s, v) => s + v, 0);
+        console.log(`[AI Optimizer] Final total: ${finalTotal} (ceiling: ${budgetCeiling})`);
 
         res.json(mappedResults);
       } catch (e) {

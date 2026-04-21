@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Edit2, Utensils, Car, ShoppingBag, Gamepad2, Zap, Heart, GraduationCap, CreditCard } from "lucide-react";
-import { BudgetCategory, formatCurrency, getSpentPercentage } from "@/data/budgetData";
+import { Edit2, Utensils, Car, ShoppingBag, Gamepad2, Zap, Heart, Plane, MoreHorizontal, CreditCard } from "lucide-react";
+import { BudgetCategory, getSpentPercentage } from "@/data/budgetData";
 import { useTranslation } from "react-i18next";
 import { usePreferences } from "@/context/PreferencesContext";
+import { cn } from "@/lib/utils";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Utensils,
@@ -13,7 +13,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Gamepad2,
   Zap,
   Heart,
-  GraduationCap,
+  Plane,
+  MoreHorizontal,
   CreditCard,
 };
 
@@ -32,11 +33,19 @@ export function CategoryBudgetCard({ category, onEdit }: CategoryBudgetCardProps
 
   const IconComponent = iconMap[category.icon] || CreditCard;
 
-  const getProgressColor = () => {
-    if (isOverBudget) return "bg-destructive";
-    if (isWarning) return "bg-amber-500";
-    return "";
-  };
+  // Distinct bar color: green → amber → red
+  const barColor = isOverBudget
+    ? "bg-red-500"
+    : isWarning
+    ? "bg-amber-500"
+    : "bg-emerald-500";
+
+  // Status text color to match bar
+  const statusColor = isOverBudget
+    ? "text-red-500"
+    : isWarning
+    ? "text-amber-500"
+    : "text-emerald-600 dark:text-emerald-400";
 
   return (
     <Card className="group hover:shadow-md transition-all duration-200">
@@ -70,23 +79,24 @@ export function CategoryBudgetCard({ category, onEdit }: CategoryBudgetCardProps
         </div>
 
         <div className="space-y-2">
-          <Progress 
-            value={Math.min(percentage, 100)} 
-            className={`h-2 ${getProgressColor()}`}
-          />
+          {/* Custom progress bar with clear background/foreground contrast */}
+          <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted dark:bg-muted/50">
+            <div
+              className={cn("h-full rounded-full transition-all duration-500 ease-out", barColor)}
+              style={{ width: `${Math.min(percentage, 100)}%` }}
+            />
+          </div>
           <div className="flex justify-between items-center">
-            <span className={`text-xs font-medium ${
-              isOverBudget ? 'text-destructive' : 
-              isWarning ? 'text-amber-500' : 
-              'text-muted-foreground'
-            }`}>
+            <span className={cn("text-xs font-semibold", statusColor)}>
               {percentage}%
             </span>
-            <span className={`text-xs ${
-              remaining < 0 ? 'text-destructive' : 'text-muted-foreground'
-            }`}>
-              {remaining < 0 ? t("budgetPage.overBudget") : t("budgetPage.leftBy")}
-              {' '}{formatAmount(Math.abs(remaining))}
+            <span className={cn("text-xs font-medium",
+              remaining < 0 ? 'text-red-500' : 'text-muted-foreground'
+            )}>
+              {remaining < 0
+                ? `${t("budgetPage.overBudget")} ${formatAmount(Math.abs(remaining))}`
+                : `${t("budgetPage.leftBy")} ${formatAmount(remaining)}`
+              }
             </span>
           </div>
         </div>

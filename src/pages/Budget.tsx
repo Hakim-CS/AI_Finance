@@ -9,6 +9,7 @@ import { CategoryBudgetCard } from "@/components/budget/CategoryBudgetCard";
 import { BudgetChart } from "@/components/budget/BudgetChart";
 import { SpendingTrendChart } from "@/components/budget/SpendingTrendChart";
 import { EditBudgetDialog } from "@/components/budget/EditBudgetDialog";
+import { ManageBudgetsDialog } from "@/components/budget/ManageBudgetsDialog";
 import { AIBudgetPredictions } from "@/components/ai/AIBudgetPredictions";
 import { AIBudgetOptimizer } from "@/components/budget/AIBudgetOptimizer";
 import { mockBudgetCategories, BudgetCategory } from "@/data/budgetData";
@@ -35,6 +36,7 @@ export default function Budget() {
   
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
 
   // 1. Fetch real Budget Limits from Backend
   useEffect(() => {
@@ -104,6 +106,26 @@ export default function Budget() {
       });
     } catch (e) {
       toast({ title: "Error", description: "Failed to save budget to server", variant: "destructive" });
+    }
+  };
+
+  const handleManageSave = async (budgets: { categoryId: string; amount: number }[]) => {
+    // Optimistic UI update
+    setCategories(prev => prev.map(cat => {
+      const match = budgets.find(b => b.categoryId === cat.id);
+      return match ? { ...cat, allocated: match.amount } : cat;
+    }));
+
+    // Persist all to DB
+    try {
+      await fetch(`${API_BASE}/budget`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ budgets: budgets.map(b => ({ categoryId: b.categoryId, limitAmount: b.amount })) })
+      });
+      toast({ title: t('common.success'), description: t('settings.toasts.preferencesSavedDesc') });
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to save budgets', variant: 'destructive' });
     }
   };
 
@@ -192,7 +214,7 @@ export default function Budget() {
               onClick={() => document.getElementById('ai-optimize-trigger')?.click()}>
               <Sparkles className="h-4 w-4" /> {t('ai.budgetPredictions')}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2"><Settings2 className="h-4 w-4" /> {t('budgetPage.manageCategories')}</Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setManageOpen(true)}><Settings2 className="h-4 w-4" /> {t('budgetPage.manageCategories')}</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -212,6 +234,7 @@ export default function Budget() {
       </div>
 
       <EditBudgetDialog category={editingCategory} open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleSaveBudget} />
+      <ManageBudgetsDialog categories={categories} open={manageOpen} onOpenChange={setManageOpen} onSave={handleManageSave} />
     </div>
   );
 }
