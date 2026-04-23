@@ -22,7 +22,7 @@ const riskStyles = {
   high:   { bar: "bg-destructive", icon: Zap,    badge: "bg-destructive/15 border-destructive/30 text-destructive" },
 };
 
-export function AIBudgetPredictions() {
+export function AIBudgetPredictions({ refreshKey = 0 }: { refreshKey?: number }) {
   const [predictions, setPredictions] = useState<BudgetPrediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function AIBudgetPredictions() {
       }
     };
     fetchPredictions();
-  }, [token]);
+  }, [token, refreshKey]);
 
   if (loading) {
     return (

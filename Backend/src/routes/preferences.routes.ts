@@ -52,7 +52,7 @@ preferencesRoutes.put('/auth/preferences', protect, async (req, res) => {
       [
         req.user!.id,
         theme   ?? 'system',
-        currency ?? 'TRY',
+        currency ?? 'USD',
         language ?? 'en',
         notif_email         ?? true,
         notif_budget_alerts ?? true,

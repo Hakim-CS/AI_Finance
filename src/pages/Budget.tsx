@@ -37,6 +37,7 @@ export default function Budget() {
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [budgetVersion, setBudgetVersion] = useState(0); // triggers AI prediction refresh
 
   // 1. Fetch real Budget Limits from Backend
   useEffect(() => {
@@ -107,6 +108,7 @@ export default function Budget() {
     } catch (e) {
       toast({ title: "Error", description: "Failed to save budget to server", variant: "destructive" });
     }
+    setBudgetVersion(v => v + 1);
   };
 
   const handleManageSave = async (budgets: { categoryId: string; amount: number }[]) => {
@@ -124,6 +126,7 @@ export default function Budget() {
         body: JSON.stringify({ budgets: budgets.map(b => ({ categoryId: b.categoryId, limitAmount: b.amount })) })
       });
       toast({ title: t('common.success'), description: t('settings.toasts.preferencesSavedDesc') });
+      setBudgetVersion(v => v + 1);
     } catch (e) {
       toast({ title: 'Error', description: 'Failed to save budgets', variant: 'destructive' });
     }
@@ -151,6 +154,7 @@ export default function Budget() {
     } catch (e) {
       toast({ title: "Error", description: "Failed to persist optimized budget" });
     }
+    setBudgetVersion(v => v + 1);
   };
 
   if (expensesLoading || loadingBudget) {
@@ -226,7 +230,7 @@ export default function Budget() {
         </CardContent>
       </Card>
 
-      <AIBudgetPredictions />
+      <AIBudgetPredictions refreshKey={budgetVersion} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BudgetChart categories={categories} />

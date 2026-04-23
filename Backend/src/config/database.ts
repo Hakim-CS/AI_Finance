@@ -76,7 +76,7 @@ export async function initDatabase(): Promise<void> {
       CREATE TABLE IF NOT EXISTS "UserPreferences" (
         "userId" INTEGER PRIMARY KEY REFERENCES "User"(id) ON DELETE CASCADE,
         theme TEXT DEFAULT 'system',
-        currency TEXT DEFAULT 'TRY',
+        currency TEXT DEFAULT 'USD',
         language TEXT DEFAULT 'en',
         notif_email BOOLEAN DEFAULT TRUE,
         notif_budget_alerts BOOLEAN DEFAULT TRUE,
