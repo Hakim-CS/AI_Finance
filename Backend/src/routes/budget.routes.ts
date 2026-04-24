@@ -35,93 +35,128 @@ budgetRoutes.post('/budget', protect, async (req, res) => {
   }
 });
 
-// ── GET /budget/optimize — XGBoost Python subprocess ────────────────────────
+// ── GET /budget/optimize — Random Forest v2 Python subprocess ───────────────
 
 budgetRoutes.get('/budget/optimize', protect, async (req, res) => {
   const userId = req.user?.id;
+  const CATEGORIES = ['food', 'transport', 'shopping', 'entertainment', 'utilities', 'health', 'travel', 'other'];
 
   try {
-    // Fetch the latest income + saving target directly from the DB
+    // 1. Fetch user income + saving target
     const userRes = await pool.query('SELECT income, saving_target FROM "User" WHERE id = $1', [userId]);
     const userIncome = Number(userRes.rows[0]?.income) || 0;
     const savingTarget = Number(userRes.rows[0]?.saving_target) || 0;
 
-    // GUARD: Refuse to optimize if the user hasn't set their income
     if (userIncome <= 0) {
       return res.status(400).json({
         message: 'Please set your monthly income in Settings before using AI optimization.'
       });
     }
 
-    // The maximum budget AI can allocate = income minus saving target (min 50% of income)
     const budgetCeiling = Math.max(userIncome * 0.5, userIncome - savingTarget);
 
-    // Sensible minimum percentages per category (of budgetCeiling)
-    // These act as floors — if the AI suggests less, we use the floor
-    const MINIMUM_PERCENTAGES: Record<string, number> = {
-      food: 0.15,           // At least 15%
-      utilities: 0.10,      // At least 10%
-      transport: 0.08,      // At least 8%
-      shopping: 0.05,       // At least 5%
-      entertainment: 0.03,  // At least 3%
-      health: 0.03,         // At least 3%
-      travel: 0.03,         // At least 3%
-      other: 0.02,          // At least 2%
-    };
+    // 2. Fetch the user's LAST MONTH spending per category from real expenses
+    //    This gives the model "previous month" context for better predictions
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    console.log(`[AI Optimizer] User ${userId} | Income: ${userIncome} | Saving: ${savingTarget} | Ceiling: ${budgetCeiling}`);
+    const expensesRes = await pool.query(
+      `SELECT "categoryId", SUM(amount) as total
+       FROM "Expense"
+       WHERE "userId" = $1 AND date >= $2 AND date <= $3
+       GROUP BY "categoryId"`,
+      [userId, lastMonth.toISOString(), lastMonthEnd.toISOString()]
+    );
 
-    const scriptPath = path.join(__dirname, '../../../AI/optimize.py');
-
-    exec(`python "${scriptPath}" ${userIncome}`, { cwd: path.join(__dirname, '../../../AI') }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Exec error: ${error}`);
-        return res.status(500).json({ message: "AI Optimization failed" });
+    // Build previous-month spending map
+    const prevSpending: Record<string, number> = {};
+    CATEGORIES.forEach(c => prevSpending[c] = 0);
+    for (const row of expensesRes.rows) {
+      if (CATEGORIES.includes(row.categoryId)) {
+        prevSpending[row.categoryId] = Number(row.total) || 0;
       }
+    }
+    const prevTotal = Object.values(prevSpending).reduce((s, v) => s + v, 0);
+    const currentMonth = now.getMonth() + 1; // 1-12
 
-      try {
-        const rawAiResult = JSON.parse(stdout);
+    const hasHistory = prevTotal > 0;
 
-        // Map Kaggle 10 categories → App 8 categories
-        const mappedResults: Record<string, number> = {
-          food: rawAiResult["Food & Drink"] || 0,
-          transport: (rawAiResult["Travel"] || 0) * 0.4,
-          entertainment: rawAiResult["Entertainment"] || 0,
-          shopping: rawAiResult["Shopping"] || 0,
-          utilities: (rawAiResult["Utilities"] || 0) + (rawAiResult["Rent"] || 0),
-          health: rawAiResult["Health & Fitness"] || 0,
-          travel: (rawAiResult["Travel"] || 0) * 0.6,
-          other: rawAiResult["Other"] || 0
-        };
+    console.log(`[AI Optimizer v2] User ${userId} | Income: ${userIncome} | Month: ${currentMonth} | Prev total: ${prevTotal.toFixed(0)} | Has history: ${hasHistory}`);
 
-        // STEP 1: Enforce minimum floors — XGBoost extrapolates poorly for out-of-range incomes
-        // If the AI suggests less than the floor, raise it to the floor
-        for (const [catId, minPct] of Object.entries(MINIMUM_PERCENTAGES)) {
-          const floor = budgetCeiling * minPct;
-          if (mappedResults[catId] < floor) {
-            console.log(`[AI Optimizer] Floor applied: ${catId} raised from ${mappedResults[catId].toFixed(0)} to ${floor.toFixed(0)}`);
-            mappedResults[catId] = floor;
-          }
+    // 3. If user has spending history, use the ML model; otherwise use proportional defaults
+    if (hasHistory) {
+      // Call the v2 prediction script with 11 arguments
+      const scriptPath = path.join(__dirname, '../../../AI/predict_v2.py');
+      const args = [
+        userIncome,
+        currentMonth,
+        prevSpending.food,
+        prevSpending.transport,
+        prevSpending.shopping,
+        prevSpending.entertainment,
+        prevSpending.utilities,
+        prevSpending.health,
+        prevSpending.travel,
+        prevSpending.other,
+        prevTotal,
+      ].join(' ');
+
+      exec(`python "${scriptPath}" ${args}`, { cwd: path.join(__dirname, '../../../AI') }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`[AI Optimizer v2] Exec error: ${error}`);
+          return res.status(500).json({ message: "AI Optimization failed" });
         }
 
-        // STEP 2: Scale total to fit within budget ceiling
-        const totalAfterFloors = Object.values(mappedResults).reduce((s, v) => s + v, 0);
-        if (totalAfterFloors > 0) {
-          const scaleFactor = budgetCeiling / totalAfterFloors;
-          for (const key of Object.keys(mappedResults)) {
-            mappedResults[key] = Math.round(mappedResults[key] * scaleFactor);
+        try {
+          const predictions: Record<string, number> = JSON.parse(stdout);
+
+          if (predictions.error) {
+            console.error(`[AI Optimizer v2] Python error: ${predictions.error}`);
+            return res.status(500).json({ message: predictions.error });
           }
+
+          // Scale to fit within budget ceiling
+          const rawTotal = Object.values(predictions).reduce((s, v) => s + v, 0);
+          if (rawTotal > 0) {
+            const scale = budgetCeiling / rawTotal;
+            for (const key of Object.keys(predictions)) {
+              predictions[key] = Math.round(predictions[key] * scale);
+            }
+          }
+
+          const finalTotal = Object.values(predictions).reduce((s, v) => s + v, 0);
+          console.log(`[AI Optimizer v2] ML prediction total: ${finalTotal} (ceiling: ${budgetCeiling})`);
+
+          res.json(predictions);
+        } catch (e) {
+          console.error(`[AI Optimizer v2] Parse error:`, e);
+          res.status(500).json({ message: "Failed to parse AI result" });
         }
+      });
+    } else {
+      // No spending history — use sensible proportional defaults
+      const DEFAULT_ALLOCATIONS: Record<string, number> = {
+        food: 0.25,
+        transport: 0.10,
+        shopping: 0.12,
+        entertainment: 0.08,
+        utilities: 0.18,
+        health: 0.08,
+        travel: 0.07,
+        other: 0.12,
+      };
 
-        const finalTotal = Object.values(mappedResults).reduce((s, v) => s + v, 0);
-        console.log(`[AI Optimizer] Final total: ${finalTotal} (ceiling: ${budgetCeiling})`);
-
-        res.json(mappedResults);
-      } catch (e) {
-        res.status(500).json({ message: "Failed to parse AI result" });
+      const result: Record<string, number> = {};
+      for (const [cat, pct] of Object.entries(DEFAULT_ALLOCATIONS)) {
+        result[cat] = Math.round(budgetCeiling * pct);
       }
-    });
+
+      console.log(`[AI Optimizer v2] New user fallback — proportional allocation`);
+      res.json(result);
+    }
   } catch (error: any) {
+    console.error('[AI Optimizer v2] Error:', error);
     res.status(500).json({ message: 'Error fetching user data' });
   }
 });

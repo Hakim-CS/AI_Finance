@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "name": "Emily (College Student)",
+    "income": 2800,
+    "saving_rate": 0.05,
+    "allocations": {
+      "food": 0.32,
+      "transport": 0.12,
+      "shopping": 0.08,
+      "entertainment": 0.15,
+      "utilities": 0.18,
+      "health": 0.03,
+      "travel": 0.02,
+      "other": 0.1
+    },
+    "description": "A 21-year-old college student working part-time. Lives on a tight budget, mostly spends on food and entertainment. Rarely travels. High variability."
+  },
+  {
+    "id": 2,
+    "name": "Marcus (Junior Software Developer)",
+    "income": 5500,
+    "saving_rate": 0.15,
+    "allocations": {
+      "food": 0.25,
+      "transport": 0.1,
+      "shopping": 0.12,
+      "entertainment": 0.1,
+      "utilities": 0.2,
+      "health": 0.08,
+      "travel": 0.05,
+      "other": 0.1
+    },
+    "description": "A 26-year-old developer saving for an emergency fund. Balanced spender with a slight tech-gadget habit. Takes one vacation per year."
+  },
+  {
+    "id": 3,
+    "name": "Sarah (Marketing Manager)",
+    "income": 8500,
+    "saving_rate": 0.2,
+    "allocations": {
+      "food": 0.22,
+      "transport": 0.12,
+      "shopping": 0.15,
+      "entertainment": 0.08,
+      "utilities": 0.18,
+      "health": 0.1,
+      "travel": 0.08,
+      "other": 0.07
+    },
+    "description": "A 32-year-old professional with a steady lifestyle. Cares about health and appearance. Travels moderately. Consistent spender with low volatility."
+  },
+  {
+    "id": 4,
+    "name": "David (Senior Engineer)",
+    "income": 13000,
+    "saving_rate": 0.25,
+    "allocations": {
+      "food": 0.2,
+      "transport": 0.1,
+      "shopping": 0.15,
+      "entertainment": 0.1,
+      "utilities": 0.15,
+      "health": 0.1,
+      "travel": 0.12,
+      "other": 0.08
+    },
+    "description": "A 38-year-old senior engineer with a family. Spends comfortably on quality. Regular traveler. Health-conscious with premium subscriptions."
+  },
+  {
+    "id": 5,
+    "name": "Olivia (Executive Director)",
+    "income": 22000,
+    "saving_rate": 0.3,
+    "allocations": {
+      "food": 0.18,
+      "transport": 0.08,
+      "shopping": 0.18,
+      "entertainment": 0.08,
+      "utilities": 0.12,
+      "health": 0.1,
+      "travel": 0.18,
+      "other": 0.08
+    },
+    "description": "A 45-year-old executive with a luxury lifestyle. Travels frequently for both work and leisure. High shopping and travel budgets. Very consistent."
+  }
+]
