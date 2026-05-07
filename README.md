@@ -22,15 +22,20 @@
 
 ## Preview
 
-<p>
-  <img width="430" src="ScreenShots/sc2.png" alt="Dashboard Charts" />
-  <img width="430" src="ScreenShots/sc3.png" alt="Expenses Page" />
-  <img width="430" src="ScreenShots/sc4.png" alt="Budget Management" />
-  <img width="430" src="ScreenShots/sc5.png" alt="AI Predictions" />
-  <img width="430" src="ScreenShots/sc8.png" alt="Dark Mode" />
-  <img width="430" src="ScreenShots/sc9.png" alt="Receipt Scanner" />
-  
-</p>
+<table>
+  <tr>
+    <td width="50%"><img src="ScreenShots/sc2.png" alt="Dashboard Charts" /></td>
+    <td width="50%"><img src="ScreenShots/sc3.png" alt="Expenses Page" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="ScreenShots/sc4.png" alt="Budget Management" /></td>
+    <td width="50%"><img src="ScreenShots/sc5.png" alt="AI Predictions" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="ScreenShots/sc8.png" alt="Dark Mode" /></td>
+    <td width="50%"><img src="ScreenShots/sc9.png" alt="Receipt Scanner" /></td>
+  </tr>
+</table>
 
 ---
 
