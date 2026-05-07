@@ -93,7 +93,7 @@ def load_and_prepare():
     print(f"  Features: {len(feature_cols)} | Targets: {len(CATEGORIES)}")
     return df, X, y, feature_cols, train_mask, test_mask
 
-
+# this function is from train_model_v2.py
 def get_models():
     """Return dict of model name -> constructor for each category."""
     return {
@@ -113,7 +113,7 @@ def experiment_model_comparison(X_train, X_test, y_train, y_test):
     print("\n" + "="*60)
     print("  EXPERIMENT 1: Multi-Model Comparison")
     print("="*60)
-
+    # call the function get_models
     model_factories = get_models()
     results = {}
 
@@ -232,7 +232,7 @@ def experiment_feature_ablation(X_train, X_test, y_train, y_test, feature_cols):
     print(f"  Baseline (all features): MAE = ${baseline_avg:.2f}")
 
     results = {"baseline_mae": round(baseline_avg, 2), "ablations": {}}
-
+    # loop over each feature and remove it one by one
     for feat in feature_cols:
         remaining = [f for f in feature_cols if f != feat]
         cat_maes = []
@@ -265,7 +265,7 @@ def experiment_feature_ablation(X_train, X_test, y_train, y_test, feature_cols):
     ax.axvline(x=0, color='gray', linewidth=1, linestyle='--')
     ax.set_xlabel("MAE Increase When Feature Removed ($)", fontweight='bold')
     ax.set_title("Experiment 2: Feature Ablation — Impact of Removing Each Feature")
-
+    # Add impact values on the bars
     for bar, val in zip(bars, impacts):
         x_pos = val + (0.5 if val >= 0 else -0.5)
         ax.text(x_pos, bar.get_y() + bar.get_height()/2,
@@ -303,10 +303,10 @@ def experiment_hyperparameter_search(X_train, X_test, y_train, y_test):
     print("  Phase A: Searching depth x n_estimators...")
     depth_est_grid = np.zeros((len(depths), len(n_ests)))
 
-    for i, d in enumerate(depths):
-        for j, n in enumerate(n_ests):
+    for i, d in enumerate(depths): # loop over depth
+        for j, n in enumerate(n_ests): # loop over n_estimators
             cat_maes = []
-            for cat in CATEGORIES:
+            for cat in CATEGORIES: # loop over categories
                 rf = RandomForestRegressor(n_estimators=n, max_depth=d, min_samples_leaf=3, random_state=42)
                 rf.fit(X_train, y_train[cat])
                 pred = rf.predict(X_test)
@@ -379,7 +379,7 @@ def experiment_hyperparameter_search(X_train, X_test, y_train, y_test):
     mid_n = 100  # Use n_estimators=100 for the depth curve
     j_idx = n_ests.index(mid_n) if mid_n in n_ests else 2
     depth_curve = depth_est_grid[:, j_idx]
-
+    # plot the depth curve, highlight the best depth
     ax.plot(range(len(depths)), depth_curve, 'o-', color=C['rf'], linewidth=2.5, markersize=8, label=f'n_estimators={mid_n}')
     best_d_idx = np.argmin(depth_curve)
     ax.scatter([best_d_idx], [depth_curve[best_d_idx]], s=200, color=C['rf'], zorder=5, edgecolors='black', linewidth=2)
