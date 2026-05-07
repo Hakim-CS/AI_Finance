@@ -448,12 +448,12 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      {t('settings.profile.monthlyIncome')} ({CURRENCIES[prefs.currency]?.symbol ?? '₺'})
+                      {t('settings.profile.monthlyIncome')} ({CURRENCIES[prefs.currency]?.symbol ?? '$'})
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold select-none">
-                          {CURRENCIES[prefs.currency]?.symbol ?? '₺'}
+                          {CURRENCIES[prefs.currency]?.symbol ?? '$'}
                         </span>
                         <Input
                           type="text"
@@ -483,12 +483,12 @@ function ProfileTab({ user, token, updateUser, toast, userInitial, prefs, update
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      {t('settings.profile.savingTarget')} ({CURRENCIES[prefs.currency]?.symbol ?? '₺'})
+                      {t('settings.profile.savingTarget')} ({CURRENCIES[prefs.currency]?.symbol ?? '$'})
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold select-none">
-                          {CURRENCIES[prefs.currency]?.symbol ?? '₺'}
+                          {CURRENCIES[prefs.currency]?.symbol ?? '$'}
                         </span>
                         <Input
                           type="text"

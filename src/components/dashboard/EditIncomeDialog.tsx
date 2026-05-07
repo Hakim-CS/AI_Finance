@@ -20,7 +20,7 @@ export function EditIncomeDialog() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const { currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   const handleSave = async () => {
     if (!token) return;

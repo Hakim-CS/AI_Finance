@@ -30,7 +30,7 @@ export function ManualEntryForm() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { formatAmount, currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   const formSchema = z.object({
     amount: z.string().min(1, t('addExpensePage.manual.errors.amountRequired')).refine(

@@ -55,7 +55,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

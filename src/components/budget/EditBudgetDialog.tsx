@@ -19,7 +19,7 @@ export function EditBudgetDialog({ category, open, onOpenChange, onSave }: EditB
   const [amount, setAmount] = useState(category?.allocated.toString() || "");
   const { t } = useTranslation();
   const { formatAmount, currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   const handleSave = () => {
     if (category && amount) {

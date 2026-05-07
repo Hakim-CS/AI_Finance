@@ -18,7 +18,7 @@ interface ManageBudgetsDialogProps {
 export function ManageBudgetsDialog({ categories, open, onOpenChange, onSave }: ManageBudgetsDialogProps) {
   const { t } = useTranslation();
   const { formatAmount, currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   // Local editable state — initialized from props
   const [values, setValues] = useState<Record<string, string>>({});

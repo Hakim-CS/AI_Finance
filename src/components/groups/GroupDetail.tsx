@@ -45,7 +45,7 @@ export function GroupDetail({ group, onBack }: GroupDetailProps) {
   const { data: categories } = useCategories();
   const { t } = useTranslation();
   const { formatAmount, currency } = usePreferences();
-  const currencySymbol = CURRENCIES[currency]?.symbol ?? "₺";
+  const currencySymbol = CURRENCIES[currency]?.symbol ?? "$";
 
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
