@@ -1,0 +1,544 @@
+{
+  "model_comparison": {
+    "Linear Regression": {
+      "per_category_mae": {
+        "food": 100.95,
+        "transport": 47.03,
+        "shopping": 158.07,
+        "entertainment": 61.66,
+        "utilities": 111.12,
+        "health": 51.7,
+        "travel": 340.7,
+        "other": 42.41
+      },
+      "per_category_rmse": {
+        "food": 128.21,
+        "transport": 61.73,
+        "shopping": 217.46,
+        "entertainment": 76.1,
+        "utilities": 142.95,
+        "health": 66.31,
+        "travel": 543.49,
+        "other": 55.57
+      },
+      "per_category_r2": {
+        "food": 0.9648,
+        "transport": 0.9652,
+        "shopping": 0.9434,
+        "entertainment": 0.9487,
+        "utilities": 0.9216,
+        "health": 0.9817,
+        "travel": 0.7455,
+        "other": 0.9723
+      },
+      "avg_mae": 114.21,
+      "avg_rmse": 161.48,
+      "avg_r2": 0.9304,
+      "time_sec": 0.01
+    },
+    "Decision Tree": {
+      "per_category_mae": {
+        "food": 123.67,
+        "transport": 51.26,
+        "shopping": 188.84,
+        "entertainment": 65.38,
+        "utilities": 104.96,
+        "health": 63.74,
+        "travel": 267.14,
+        "other": 56.86
+      },
+      "per_category_rmse": {
+        "food": 165.37,
+        "transport": 66.84,
+        "shopping": 349.66,
+        "entertainment": 89.53,
+        "utilities": 149.12,
+        "health": 87.0,
+        "travel": 591.43,
+        "other": 73.6
+      },
+      "per_category_r2": {
+        "food": 0.9415,
+        "transport": 0.9592,
+        "shopping": 0.8537,
+        "entertainment": 0.929,
+        "utilities": 0.9147,
+        "health": 0.9685,
+        "travel": 0.6986,
+        "other": 0.9514
+      },
+      "avg_mae": 115.23,
+      "avg_rmse": 196.57,
+      "avg_r2": 0.9021,
+      "time_sec": 0.02
+    },
+    "Random Forest": {
+      "per_category_mae": {
+        "food": 96.85,
+        "transport": 43.83,
+        "shopping": 175.62,
+        "entertainment": 59.87,
+        "utilities": 108.69,
+        "health": 54.0,
+        "travel": 275.49,
+        "other": 41.07
+      },
+      "per_category_rmse": {
+        "food": 129.66,
+        "transport": 55.95,
+        "shopping": 298.1,
+        "entertainment": 75.37,
+        "utilities": 143.05,
+        "health": 71.83,
+        "travel": 467.87,
+        "other": 52.26
+      },
+      "per_category_r2": {
+        "food": 0.964,
+        "transport": 0.9714,
+        "shopping": 0.8937,
+        "entertainment": 0.9497,
+        "utilities": 0.9215,
+        "health": 0.9785,
+        "travel": 0.8114,
+        "other": 0.9755
+      },
+      "avg_mae": 106.93,
+      "avg_rmse": 161.76,
+      "avg_r2": 0.9332,
+      "time_sec": 0.55
+    },
+    "Gradient Boosting": {
+      "per_category_mae": {
+        "food": 102.33,
+        "transport": 46.17,
+        "shopping": 143.21,
+        "entertainment": 52.19,
+        "utilities": 96.01,
+        "health": 49.56,
+        "travel": 194.94,
+        "other": 43.46
+      },
+      "per_category_rmse": {
+        "food": 133.95,
+        "transport": 57.49,
+        "shopping": 259.27,
+        "entertainment": 72.74,
+        "utilities": 126.52,
+        "health": 63.75,
+        "travel": 436.14,
+        "other": 57.81
+      },
+      "per_category_r2": {
+        "food": 0.9616,
+        "transport": 0.9698,
+        "shopping": 0.9196,
+        "entertainment": 0.9532,
+        "utilities": 0.9386,
+        "health": 0.9831,
+        "travel": 0.8361,
+        "other": 0.97
+      },
+      "avg_mae": 90.98,
+      "avg_rmse": 150.96,
+      "avg_r2": 0.9415,
+      "time_sec": 0.41
+    },
+    "SVR": {
+      "per_category_mae": {
+        "food": 112.19,
+        "transport": 49.95,
+        "shopping": 215.63,
+        "entertainment": 92.23,
+        "utilities": 162.96,
+        "health": 68.18,
+        "travel": 394.34,
+        "other": 56.35
+      },
+      "per_category_rmse": {
+        "food": 151.24,
+        "transport": 69.65,
+        "shopping": 355.71,
+        "entertainment": 118.56,
+        "utilities": 205.73,
+        "health": 99.06,
+        "travel": 791.46,
+        "other": 65.83
+      },
+      "per_category_r2": {
+        "food": 0.9511,
+        "transport": 0.9557,
+        "shopping": 0.8486,
+        "entertainment": 0.8756,
+        "utilities": 0.8376,
+        "health": 0.9592,
+        "travel": 0.4602,
+        "other": 0.9611
+      },
+      "avg_mae": 143.98,
+      "avg_rmse": 232.15,
+      "avg_r2": 0.8561,
+      "time_sec": 0.02
+    }
+  },
+  "feature_ablation": {
+    "baseline_mae": 106.93,
+    "ablations": {
+      "income": {
+        "mae_without": 107.12,
+        "impact": 0.2,
+        "impact_pct": 0.18
+      },
+      "month": {
+        "mae_without": 113.8,
+        "impact": 6.88,
+        "impact_pct": 6.43
+      },
+      "prev_food": {
+        "mae_without": 103.4,
+        "impact": -3.53,
+        "impact_pct": -3.3
+      },
+      "prev_transport": {
+        "mae_without": 104.05,
+        "impact": -2.88,
+        "impact_pct": -2.69
+      },
+      "prev_shopping": {
+        "mae_without": 107.33,
+        "impact": 0.41,
+        "impact_pct": 0.38
+      },
+      "prev_entertainment": {
+        "mae_without": 107.69,
+        "impact": 0.77,
+        "impact_pct": 0.72
+      },
+      "prev_utilities": {
+        "mae_without": 106.48,
+        "impact": -0.45,
+        "impact_pct": -0.42
+      },
+      "prev_health": {
+        "mae_without": 106.72,
+        "impact": -0.21,
+        "impact_pct": -0.2
+      },
+      "prev_travel": {
+        "mae_without": 108.07,
+        "impact": 1.14,
+        "impact_pct": 1.07
+      },
+      "prev_other": {
+        "mae_without": 103.26,
+        "impact": -3.66,
+        "impact_pct": -3.42
+      },
+      "prev_total": {
+        "mae_without": 110.05,
+        "impact": 3.12,
+        "impact_pct": 2.92
+      }
+    }
+  },
+  "hyperparameter": {
+    "grid": [
+      {
+        "n_estimators": 25,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 117.09
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 116.87
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 116.05
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 115.38
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 115.27
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "3",
+        "min_samples_leaf": 3,
+        "avg_mae": 115.11
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 109.3
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 108.89
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 108.67
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 108.26
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 108.53
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "4",
+        "min_samples_leaf": 3,
+        "avg_mae": 108.46
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.25
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.76
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.83
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.45
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.61
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "5",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.47
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.87
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.95
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.93
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.45
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.5
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "6",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.27
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.46
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.08
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.62
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.14
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.08
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "8",
+        "min_samples_leaf": 3,
+        "avg_mae": 105.91
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.46
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.08
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.63
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.15
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.09
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "10",
+        "min_samples_leaf": 3,
+        "avg_mae": 105.91
+      },
+      {
+        "n_estimators": 25,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.46
+      },
+      {
+        "n_estimators": 50,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 107.08
+      },
+      {
+        "n_estimators": 100,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.63
+      },
+      {
+        "n_estimators": 150,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.15
+      },
+      {
+        "n_estimators": 200,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 106.09
+      },
+      {
+        "n_estimators": 300,
+        "max_depth": "None",
+        "min_samples_leaf": 3,
+        "avg_mae": 105.91
+      }
+    ],
+    "best": {
+      "n_estimators": 300,
+      "max_depth": "10",
+      "min_samples_leaf": 1,
+      "avg_mae": 98.0
+    }
+  },
+  "learning_curve": {
+    "fractions": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "train_maes": [
+      142.3,
+      65.83,
+      76.71,
+      64.05,
+      57.71,
+      58.89,
+      59.11,
+      57.2,
+      58.62,
+      60.0
+    ],
+    "test_maes": [
+      267.03,
+      147.53,
+      140.87,
+      136.98,
+      125.16,
+      116.03,
+      116.32,
+      113.27,
+      113.53,
+      107.83
+    ]
+  }
+}

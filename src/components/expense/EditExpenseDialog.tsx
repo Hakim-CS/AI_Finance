@@ -119,6 +119,7 @@ export function EditExpenseDialog({ isOpen, onClose, expense }: EditExpenseDialo
         title: "Expense Updated!",
         description: `The expense for ${values.description} has been updated.`,
       });
+      // file 
       queryClient.invalidateQueries({ queryKey: ['expenses'] }); // Invalidate expenses query to refetch
       onClose(); // Close dialog on success
     } catch (error: any) {
