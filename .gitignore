@@ -43,3 +43,8 @@ Backend/uploads/**
 # Local environment overrides (contain IP addresses / secrets)
 .env.local
 .env.*.local
+
+docs
+.pdf
+project_context.md
+thesis_context.md
