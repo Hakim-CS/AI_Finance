@@ -1,0 +1,30 @@
+{
+  "static": {
+    "avg_tracking_error": 335.64,
+    "cat_overspend_rate_pct": 35.4,
+    "avg_savings_headroom": 1554.0,
+    "avg_budget_stability": 0.0,
+    "total_months": 60
+  },
+  "lastmonth": {
+    "avg_tracking_error": 219.78,
+    "cat_overspend_rate_pct": 30.4,
+    "avg_savings_headroom": 1554.0,
+    "avg_budget_stability": 1210.58,
+    "total_months": 60
+  },
+  "ml": {
+    "avg_tracking_error": 181.91,
+    "cat_overspend_rate_pct": 24.8,
+    "avg_savings_headroom": 1554.0,
+    "avg_budget_stability": 919.93,
+    "total_months": 60
+  },
+  "adaptive": {
+    "avg_tracking_error": 202.55,
+    "cat_overspend_rate_pct": 24.4,
+    "avg_savings_headroom": 1554.0,
+    "avg_budget_stability": 289.48,
+    "total_months": 60
+  }
+}

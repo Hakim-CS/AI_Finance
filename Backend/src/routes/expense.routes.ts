@@ -1,8 +1,34 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { exec } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 import { pool } from '../config/database';
 import { protect } from '../middleware/auth';
 import { forecastModelCache, parseVoiceTranscript, parseReceiptText } from '../services/ai.service';
+
+// ── Audio upload config for voice transcription ─────────────────────────────
+const AUDIO_DIR = path.join(__dirname, '..', '..', 'uploads', 'audio');
+if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
+
+const audioStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, AUDIO_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.webm';
+    cb(null, `voice_${Date.now()}${ext}`);
+  },
+});
+
+const uploadAudio = multer({
+  storage: audioStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['audio/webm', 'audio/wav', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/x-m4a', 'video/webm'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only audio files are allowed') as any, false);
+  },
+});
 
 export const expenseRoutes = Router();
 
@@ -104,7 +130,67 @@ expenseRoutes.delete('/expenses/:id', protect, async (req, res) => {
   }
 });
 
-// ── POST /expenses/parse-voice ──────────────────────────────────────────────
+// ── POST /expenses/transcribe-voice — Whisper-based STT + NLP parsing ───────
+//
+// Accepts an audio file, transcribes it using a self-hosted Whisper model
+// (OpenAI open-source, runs locally), then pipes the transcript through
+// the existing NLP parser for amount extraction + category classification.
+
+expenseRoutes.post('/expenses/transcribe-voice', protect, uploadAudio.single('audio'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No audio file provided' });
+  }
+
+  const audioPath = req.file.path;
+  const language = (req.body?.language as string) || '';
+
+  // Map frontend language codes to Whisper language codes
+  const langMap: Record<string, string> = { en: 'en', tr: 'tr', de: 'de' };
+  const whisperLang = langMap[language] || '';
+
+  const scriptPath = path.join(__dirname, '../../../AI/transcribe.py');
+  const langArg = whisperLang ? ` ${whisperLang}` : '';
+  const cmd = `python "${scriptPath}" "${audioPath}"${langArg}`;
+
+  console.log(`[Whisper] Transcribing: ${req.file.filename} (lang: ${whisperLang || 'auto'})`);
+
+  exec(cmd, { cwd: path.join(__dirname, '../../../AI'), timeout: 60000 }, (error, stdout, stderr) => {
+    // Clean up audio file after processing
+    try { fs.unlinkSync(audioPath); } catch (_) {}
+
+    if (error) {
+      console.error(`[Whisper] Exec error: ${error.message}`);
+      return res.status(500).json({ message: 'Transcription failed', details: error.message });
+    }
+
+    try {
+      const whisperResult = JSON.parse(stdout);
+
+      if (whisperResult.error) {
+        console.error(`[Whisper] Python error: ${whisperResult.error}`);
+        return res.status(500).json({ message: whisperResult.error });
+      }
+
+      console.log(`[Whisper] Transcript: "${whisperResult.text}" (lang: ${whisperResult.language}, model: ${whisperResult.model})`);
+
+      // Pass transcript through existing NLP parser
+      const parsed = parseVoiceTranscript(whisperResult.text);
+
+      res.json({
+        ...parsed,
+        transcript: whisperResult.text,
+        whisperLanguage: whisperResult.language,
+        whisperModel: whisperResult.model,
+      });
+    } catch (e: any) {
+      console.error(`[Whisper] Parse error:`, e);
+      res.status(500).json({ message: 'Failed to parse transcription result' });
+    }
+  });
+});
+
+// ── POST /expenses/parse-voice (text-only fallback) ─────────────────────────
+// Kept for backward compatibility — accepts text directly, skips Whisper.
 
 expenseRoutes.post('/expenses/parse-voice', protect, async (req, res) => {
   const { transcript } = req.body;

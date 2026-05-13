@@ -1,6 +1,6 @@
 import { API_BASE } from "@/lib/api";
-import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Loader2, Check, AlertCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { Mic, MicOff, Loader2, Check, AlertCircle, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,86 +18,106 @@ interface ParsedExpense {
   description: string;
   date: string;
   notes: string | null;
+  transcript?: string;
+  whisperLanguage?: string;
+  whisperModel?: string;
 }
 
 export function VoiceInput() {
   const [state, setState] = useState<RecordingState>("idle");
   const [transcript, setTranscript] = useState("");
   const [parsedData, setParsedData] = useState<ParsedExpense | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { formatAmount, language } = usePreferences();
 
-  // Map language to speech recognition locale
-  const speechLocaleMap: Record<string, string> = {
-    tr: 'tr-TR',
-    en: 'en-US',
-    de: 'de-DE',
-  };
-
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = speechLocaleMap[language] || 'en-US';
-
-    recognition.onstart = () => setState("listening");
-    
-    recognition.onresult = (event: any) => {
-      const text = event.results[0][0].transcript;
-      setTranscript(text);
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error !== 'aborted') {
-        toast({ title: t('common.error'), description: event.error, variant: "destructive" });
-      }
-      setState("idle");
-    };
-
-    recognition.onend = () => {
-      setTimeout(() => {
-        setState(prev => (prev === "listening" ? "stopped" : prev));
-      }, 150);
-    };
-
-    recognitionRef.current = recognition;
-  }, [toast, language, t]);
-
-  const toggleRecording = () => {
-    if (!recognitionRef.current) return;
+  // ── Start / Stop recording using MediaRecorder API ────────────────────
+  const toggleRecording = async () => {
     if (state === "listening") {
-      recognitionRef.current.stop();
-    } else {
-      setTranscript("");
-      setParsedData(null);
-      recognitionRef.current.start();
+      // Stop recording
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+
+    // Reset state
+    setTranscript("");
+    setParsedData(null);
+    audioChunksRef.current = [];
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm',
+      });
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+        setState("stopped");
+      };
+
+      mediaRecorder.onerror = () => {
+        stream.getTracks().forEach(track => track.stop());
+        toast({ title: t('common.error'), description: "Microphone error", variant: "destructive" });
+        setState("idle");
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setState("listening");
+    } catch (error: any) {
+      toast({
+        title: t('common.error'),
+        description: error.message || "Microphone access denied",
+        variant: "destructive",
+      });
+      setState("idle");
     }
   };
 
-  const handleProcessTranscript = async () => {
-    if (!transcript || !token) return;
+  // ── Send audio to backend for Whisper transcription + NLP parsing ─────
+  const handleProcessAudio = async () => {
+    if (audioChunksRef.current.length === 0 || !token) return;
     setState("processing");
 
     try {
-      const response = await fetch(`${API_BASE}/expenses/parse-voice`, {
+      // Build the audio blob from recorded chunks
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+      // Create FormData with the audio file and language
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('language', language);
+
+      // Send to Whisper transcription endpoint
+      const response = await fetch(`${API_BASE}/expenses/transcribe-voice`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          // Note: Do NOT set Content-Type — browser sets it with boundary for FormData
         },
-        body: JSON.stringify({ transcript }),
+        body: formData,
       });
 
-      if (!response.ok) throw new Error('Parsing failed');
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Transcription failed');
+      }
 
-      const data = await response.json();
+      const data: ParsedExpense = await response.json();
+      setTranscript(data.transcript || data.description || "");
       setParsedData(data);
       setState("review");
     } catch (error: any) {
@@ -106,6 +126,7 @@ export function VoiceInput() {
     }
   };
 
+  // ── Save confirmed expense to database ────────────────────────────────
   const handleSaveExpense = async () => {
     if (!parsedData || !token) return;
     setState("processing");
@@ -146,16 +167,23 @@ export function VoiceInput() {
   const handleReset = () => {
     setTranscript("");
     setParsedData(null);
+    audioChunksRef.current = [];
     setState("idle");
   };
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-xl">{t('addExpensePage.voice.title')}</CardTitle>
+        <CardTitle className="text-xl flex items-center gap-2">
+          {t('addExpensePage.voice.title')}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] font-bold text-primary uppercase tracking-wider">
+            <Brain className="w-3 h-3" /> Whisper AI
+          </span>
+        </CardTitle>
         <CardDescription>{t('addExpensePage.voice.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-6">
+        {/* Microphone button */}
         <Button
           size="lg"
           onClick={toggleRecording}
@@ -169,20 +197,33 @@ export function VoiceInput() {
           {state === "listening" && <div className="absolute inset-0 rounded-full bg-destructive/20 animate-ping" />}
         </Button>
 
+        {/* Status text */}
         <p className="text-sm font-medium">
           {state === "idle" && t('addExpensePage.voice.tapStart')}
           {state === "listening" && t('addExpensePage.voice.listening')}
-          {state === "stopped" && (transcript ? t('common.reviewTranscript') : t('common.noSpeechDetected'))}
-          {state === "processing" && t('addExpensePage.voice.processing')}
+          {state === "stopped" && (audioChunksRef.current.length > 0 ? "Recording ready — click Analyze to transcribe with AI" : t('common.noSpeechDetected'))}
+          {state === "processing" && (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              AI is transcribing your speech...
+            </span>
+          )}
           {state === "review" && t('common.verifyExtraction')}
         </p>
 
+        {/* Transcript display */}
         {transcript && (
           <div className="w-full p-3 bg-muted rounded-lg text-sm italic border border-border">
             "{transcript}"
+            {parsedData?.whisperModel && (
+              <p className="text-[10px] text-muted-foreground mt-1 not-italic">
+                Transcribed by Whisper ({parsedData.whisperModel}) • Detected: {parsedData.whisperLanguage}
+              </p>
+            )}
           </div>
         )}
 
+        {/* Review panel */}
         {state === "review" && parsedData && (
           <div className="w-full space-y-4">
             <div className="p-4 bg-primary/5 border rounded-xl space-y-2 text-sm text-left">
@@ -198,8 +239,10 @@ export function VoiceInput() {
           </div>
         )}
 
-        {state === "stopped" && transcript && !parsedData && (
-          <Button onClick={handleProcessTranscript} className="w-full gradient-primary">
+        {/* Analyze button */}
+        {state === "stopped" && audioChunksRef.current.length > 0 && !parsedData && (
+          <Button onClick={handleProcessAudio} className="w-full gradient-primary">
+            <Brain className="w-4 h-4 mr-2" />
             {t('common.analyze')}
           </Button>
         )}
