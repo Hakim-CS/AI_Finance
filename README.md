@@ -256,7 +256,7 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ### Using CodeRabbit in this project
 
-1. Install the **CodeRabbit GitHub App** and grant access to `Hakim-CS/AI_Finance`.
+1. Install the **CodeRabbit GitHub App** and grant access to this repository.
 2. Enable CodeRabbit for this repository.
 3. Open a pull request. CodeRabbit will automatically review PR changes.
 4. Use the root config file (`.coderabbit.yaml`) to tune behavior such as review profile and excluded paths.
