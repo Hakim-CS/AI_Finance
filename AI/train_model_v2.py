@@ -241,7 +241,7 @@ def evaluate(models, X_test, y_test, df, test_mask):
     Predict this month's spending = user's average spending over all months.
     This captures the general level but misses trends and seasonality.
 
-    OUR MODEL: Random Forest
+    OUR MODEL: Gradient Boosting
     ========================
     Uses income + month + previous spending to make informed predictions.
 
@@ -323,7 +323,7 @@ def generate_charts(results, models, feature_cols, X_test, y_test):
 
     bars1 = ax.bar(x - width, mae_last, width, label="Last Month Baseline", color="#94a3b8", edgecolor="white")
     bars2 = ax.bar(x,         mae_avg,  width, label="Average Baseline",    color="#f59e0b", edgecolor="white")
-    bars3 = ax.bar(x + width, mae_ours, width, label="Our Random Forest",   color="#10b981", edgecolor="white")
+    bars3 = ax.bar(x + width, mae_ours, width, label="Our Gradient Boosting", color="#10b981", edgecolor="white")
 
     ax.set_xlabel("Spending Category", fontweight="bold")
     ax.set_ylabel("Mean Absolute Error ($)", fontweight="bold")

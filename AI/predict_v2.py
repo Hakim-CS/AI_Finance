@@ -1,7 +1,7 @@
 """
 predict_v2.py
 =============================================================================
-Inference script for the new Random Forest budget model.
+Inference script for the Gradient Boosting budget model.
 
 Called by the Node.js backend like:
     python predict_v2.py <income> <prev_food> <prev_transport> ... <prev_total> <month>
@@ -22,8 +22,10 @@ Arguments (in order):
 Output: JSON object with predicted spending per category
     { "food": 1200.50, "transport": 450.00, ... }
 
+Model: Gradient Boosting (selected via 5-model comparison, see model_comparison.py)
+
 Author : Aura Finance Thesis Project
-Date   : April 2026
+Date   : May 2026
 =============================================================================
 """
 

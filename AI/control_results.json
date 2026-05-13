@@ -1,30 +1,42 @@
 {
   "static": {
     "avg_tracking_error": 335.64,
+    "vs_static_improvement_pct": 0.0,
     "cat_overspend_rate_pct": 35.4,
-    "avg_savings_headroom": 1554.0,
     "avg_budget_stability": 0.0,
+    "avg_allocation_accuracy_pct": 95.6,
     "total_months": 60
   },
   "lastmonth": {
     "avg_tracking_error": 219.78,
+    "vs_static_improvement_pct": 34.5,
     "cat_overspend_rate_pct": 30.4,
-    "avg_savings_headroom": 1554.0,
     "avg_budget_stability": 1210.58,
+    "avg_allocation_accuracy_pct": 98.5,
     "total_months": 60
   },
   "ml": {
     "avg_tracking_error": 181.91,
+    "vs_static_improvement_pct": 45.8,
     "cat_overspend_rate_pct": 24.8,
-    "avg_savings_headroom": 1554.0,
     "avg_budget_stability": 919.93,
+    "avg_allocation_accuracy_pct": 99.3,
     "total_months": 60
   },
   "adaptive": {
     "avg_tracking_error": 202.55,
+    "vs_static_improvement_pct": 39.7,
     "cat_overspend_rate_pct": 24.4,
-    "avg_savings_headroom": 1554.0,
     "avg_budget_stability": 289.48,
+    "avg_allocation_accuracy_pct": 98.7,
     "total_months": 60
+  },
+  "_meta": {
+    "dataset": "synthetic (5 personas, 36 months each)",
+    "simulation_type": "software-in-the-loop",
+    "test_year": 2025,
+    "model": "GradientBoostingRegressor",
+    "conclusion_accuracy": "ML Prediction (GB) achieves lowest tracking error",
+    "conclusion_stability": "Adaptive Controller achieves smoothest budget transitions"
   }
 }

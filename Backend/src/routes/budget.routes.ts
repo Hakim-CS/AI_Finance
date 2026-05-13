@@ -35,7 +35,7 @@ budgetRoutes.post('/budget', protect, async (req, res) => {
   }
 });
 
-// ── GET /budget/optimize — Random Forest v2 Python subprocess ───────────────
+// ── GET /budget/optimize — Gradient Boosting v2 Python subprocess ───────────
 
 budgetRoutes.get('/budget/optimize', protect, async (req, res) => {
   const userId = req.user?.id;
