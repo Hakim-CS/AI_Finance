@@ -254,6 +254,14 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### Using CodeRabbit in this project
+
+1. Install the **CodeRabbit GitHub App** and grant access to `Hakim-CS/AI_Finance`.
+2. Enable CodeRabbit for this repository.
+3. Open a pull request. CodeRabbit will automatically review PR changes.
+4. Use the root config file (`.coderabbit.yaml`) to tune behavior such as review profile and excluded paths.
+5. If you need another pass after updates, push new commits or comment `/review` on the PR.
+
 ---
 
 ## License
