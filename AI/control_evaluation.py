@@ -390,8 +390,8 @@ def generate_charts(results):
     for j in range(6):
         table[(best_stab_idx, j)].set_facecolor('#ecfdf5')  # green tint for best stability
 
-    ax.set_title("Budget Control Strategy Comparison — Summary\n"
-                 "ML Prediction (GB) is most accurate · Adaptive Controller is most stable",
+    ax.set_title("Budget Control Strategy Comparison -- Summary\n"
+                 "ML Prediction (GB) is most accurate | Adaptive Controller is most stable",
                  fontweight='bold', fontsize=12, pad=25)
     plt.tight_layout()
     plt.savefig(os.path.join(CHARTS_DIR, "control_summary.png"), bbox_inches='tight')
@@ -400,16 +400,137 @@ def generate_charts(results):
 
 
 # =============================================================================
+# ALPHA SENSITIVITY ANALYSIS
+# =============================================================================
+def run_alpha_sensitivity(df, models, feature_cols):
+    """
+    Test the adaptive controller with multiple alpha values to show
+    the accuracy-stability tradeoff curve.
+
+    alpha=0.0 -> pure ML (no smoothing, most reactive)
+    alpha=1.0 -> pure inertia (never updates, most stable)
+    """
+    alphas = [0.1, 0.3, 0.5, 0.7, 0.9]
+    test_df = df[df["year"] == 2025].copy()
+    alpha_results = []
+
+    for alpha in alphas:
+        prev_budgets = {}
+        prev_budget_by = {}
+        tracking_errors = []
+        budget_deltas = []
+        overspend_count = 0
+        overspend_total = 0
+
+        for _, row in test_df.iterrows():
+            uid = row["user_id"]
+            income = row["income"]
+            saving_target = income * 0.15
+            actual = {cat: row[cat] for cat in CATEGORIES}
+            features = {col: row[col] for col in feature_cols}
+            features_df = pd.DataFrame([features])[feature_cols]
+
+            budget = strategy_adaptive(models, features_df, income,
+                                        saving_target, prev_budgets.get(uid),
+                                        alpha=alpha)
+            prev_budgets[uid] = budget
+
+            # Tracking error
+            cat_errors = [abs(actual[cat] - budget[cat]) for cat in CATEGORIES]
+            tracking_errors.append(np.mean(cat_errors))
+
+            # Overspending
+            for cat in CATEGORIES:
+                overspend_total += 1
+                if actual[cat] > budget[cat] * 1.05:
+                    overspend_count += 1
+
+            # Stability
+            key = uid
+            if key in prev_budget_by:
+                old = prev_budget_by[key]
+                delta = sum(abs(budget[cat] - old[cat]) for cat in CATEGORIES)
+                budget_deltas.append(delta)
+            prev_budget_by[key] = budget
+
+        alpha_results.append({
+            "alpha": alpha,
+            "tracking_error": round(float(np.mean(tracking_errors)), 2),
+            "stability": round(float(np.mean(budget_deltas)) if budget_deltas else 0, 2),
+            "overspend_pct": round(overspend_count / max(overspend_total, 1) * 100, 1),
+        })
+
+    return alpha_results
+
+
+def generate_alpha_chart(alpha_results):
+    """Dual-axis chart: tracking error vs stability for different alpha values."""
+    alphas = [r["alpha"] for r in alpha_results]
+    errors = [r["tracking_error"] for r in alpha_results]
+    stabs = [r["stability"] for r in alpha_results]
+
+    fig, ax1 = plt.subplots(figsize=(9, 5))
+
+    color1 = '#6366f1'
+    color2 = '#10b981'
+
+    ax1.plot(alphas, errors, '-o', color=color1, linewidth=2.5, markersize=8,
+             label='Tracking Error ($)', zorder=5)
+    ax1.set_xlabel('Smoothing Factor (alpha)', fontweight='bold', fontsize=12)
+    ax1.set_ylabel('Avg Tracking Error ($)', color=color1, fontweight='bold', fontsize=11)
+    ax1.tick_params(axis='y', labelcolor=color1)
+
+    ax2 = ax1.twinx()
+    ax2.plot(alphas, stabs, '-s', color=color2, linewidth=2.5, markersize=8,
+             label='Budget Instability ($)', zorder=5)
+    ax2.set_ylabel('Budget Instability ($)', color=color2, fontweight='bold', fontsize=11)
+    ax2.tick_params(axis='y', labelcolor=color2)
+
+    # Mark alpha=0.7 (chosen value)
+    chosen_idx = alphas.index(0.7)
+    ax1.axvline(x=0.7, color='#ef4444', linestyle='--', alpha=0.6, linewidth=1.5)
+    ax1.annotate('Selected\n(alpha=0.7)',
+                 xy=(0.7, errors[chosen_idx]),
+                 xytext=(0.78, errors[chosen_idx] + 15),
+                 fontsize=10, fontweight='bold', color='#ef4444',
+                 arrowprops=dict(arrowstyle='->', color='#ef4444', lw=1.5))
+
+    # Annotations
+    ax1.annotate('More reactive\n(follows ML closely)',
+                 xy=(0.1, 0), xycoords=('data', 'axes fraction'),
+                 fontsize=8, color='gray', fontstyle='italic', ha='center')
+    ax1.annotate('More stable\n(resists change)',
+                 xy=(0.9, 0), xycoords=('data', 'axes fraction'),
+                 fontsize=8, color='gray', fontstyle='italic', ha='center')
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper center', fontsize=10)
+
+    ax1.set_title('Alpha Sensitivity Analysis\n'
+                  'Smoothing Factor Trade-off: Accuracy vs Stability',
+                  fontweight='bold', fontsize=13)
+    ax1.grid(alpha=0.3)
+    ax1.set_xticks(alphas)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(CHARTS_DIR, "control_alpha_sensitivity.png"),
+                bbox_inches='tight')
+    plt.close()
+    print("    [OK] charts/control_alpha_sensitivity.png")
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 def main():
     print("=" * 70)
-    print("  AURA FINANCE — Adaptive Budget Control Experiment")
+    print("  AURA FINANCE -- Adaptive Budget Control Experiment")
     print("  Software-in-the-Loop Simulation (Synthetic Data)")
     print("=" * 70)
 
     # Load + split
-    print("\n[1/4] Loading data...")
+    print("\n[1/5] Loading data...")
     df = load_data()
     feature_cols = (["income", "month"] +
                     [f"prev_{cat}" for cat in CATEGORIES] + ["prev_total"])
@@ -419,15 +540,15 @@ def main():
     print(f"  Train: {len(X_train)} rows | Test: {(~train_mask).sum()} rows")
 
     # Train
-    print("\n[2/4] Training Gradient Boosting models...")
+    print("\n[2/5] Training Gradient Boosting models...")
     models = train_gb_models(X_train, y_train)
     print(f"  Trained {len(models)} category models")
 
     # Simulate
-    print("\n[3/4] Running month-by-month simulation...")
+    print("\n[3/5] Running month-by-month simulation...")
     results = run_simulation(df, models, feature_cols)
 
-    # ── Results table ────────────────────────────────────────────────────
+    # Results table
     n = results["static"]["total_months"]
     te = {nm: np.mean(results[nm]["tracking_errors"]) for nm in NAMES}
     osr = {nm: results[nm]["cat_overspend_count"] /
@@ -435,7 +556,6 @@ def main():
     stab = {nm: np.mean(results[nm]["budget_deltas"])
             if results[nm]["budget_deltas"] else 0 for nm in NAMES}
     csim = {nm: np.mean(results[nm]["cosine_sims"]) * 100 for nm in NAMES}
-
     static_te = te["static"]
 
     print(f"\n  Results ({n} simulated months, software-in-the-loop):")
@@ -457,7 +577,6 @@ def main():
               f"{osr[nm]:>7.0f}% {stab_s} {csim[nm]:>8.1f}%{tag}")
     print("  " + "-" * 82)
 
-    # Key findings
     ml_imp = pct_improve(static_te, te["ml"])
     ad_imp = pct_improve(static_te, te["adaptive"])
     lm_stab = stab["lastmonth"]
@@ -465,14 +584,26 @@ def main():
     stab_imp = pct_improve(lm_stab, ad_stab) if lm_stab > 0 else 0
 
     print(f"\n  Key findings:")
-    print(f"    • ML Prediction reduces tracking error by {ml_imp:.0f}% vs static budget")
-    print(f"    • Adaptive Controller reduces tracking error by {ad_imp:.0f}% vs static")
-    print(f"    • Adaptive is {stab_imp:.0f}% more stable than last-month baseline")
-    print(f"    • ML is most ACCURATE, Adaptive is most STABLE (classic tradeoff)")
+    print(f"    - ML Prediction reduces tracking error by {ml_imp:.0f}% vs static budget")
+    print(f"    - Adaptive Controller reduces tracking error by {ad_imp:.0f}% vs static")
+    print(f"    - Adaptive is {stab_imp:.0f}% more stable than last-month baseline")
+    print(f"    - ML is most ACCURATE, Adaptive is most STABLE (classic tradeoff)")
 
     # Charts
-    print("\n[4/4] Generating charts...")
+    print("\n[4/5] Generating charts...")
     generate_charts(results)
+
+    # Alpha sensitivity
+    print("\n[5/5] Alpha sensitivity analysis...")
+    alpha_results = run_alpha_sensitivity(df, models, feature_cols)
+    generate_alpha_chart(alpha_results)
+
+    print("\n  Alpha sensitivity results:")
+    print(f"  {'Alpha':>7} {'Error($)':>10} {'Stability($)':>13} {'Overspend%':>12}")
+    for r in alpha_results:
+        marker = " <--" if r["alpha"] == 0.7 else ""
+        print(f"  {r['alpha']:>7.1f} ${r['tracking_error']:>8.1f} "
+              f"${r['stability']:>11.0f} {r['overspend_pct']:>11.0f}%{marker}")
 
     # Save JSON
     clean = {}
@@ -486,11 +617,14 @@ def main():
             "avg_allocation_accuracy_pct": round(csim[nm], 1),
             "total_months": n,
         }
+    clean["alpha_sensitivity"] = alpha_results
     clean["_meta"] = {
         "dataset": "synthetic (5 personas, 36 months each)",
         "simulation_type": "software-in-the-loop",
         "test_year": 2025,
         "model": "GradientBoostingRegressor",
+        "selected_alpha": 0.7,
+        "alpha_justification": "Best accuracy-stability tradeoff (see sensitivity chart)",
         "conclusion_accuracy": "ML Prediction (GB) achieves lowest tracking error",
         "conclusion_stability": "Adaptive Controller achieves smoothest budget transitions",
     }
@@ -501,11 +635,12 @@ def main():
     print(f"\n  [OK] Results saved to: {out_path}")
 
     print("\n" + "=" * 70)
-    print("  COMPLETE — 4 charts generated for thesis")
-    print("    charts/control_comparison.png   (4-panel bar chart)")
-    print("    charts/control_tracking.png     (error over time)")
-    print("    charts/control_tradeoff.png     (accuracy vs stability)")
-    print("    charts/control_summary.png      (summary table)")
+    print("  COMPLETE -- 5 charts generated for thesis")
+    print("    charts/control_comparison.png        (4-panel bar chart)")
+    print("    charts/control_tracking.png          (error over time)")
+    print("    charts/control_tradeoff.png          (accuracy vs stability)")
+    print("    charts/control_alpha_sensitivity.png (alpha tradeoff curve)")
+    print("    charts/control_summary.png           (summary table)")
     print("=" * 70)
 
 

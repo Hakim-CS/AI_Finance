@@ -31,11 +31,45 @@
     "avg_allocation_accuracy_pct": 98.7,
     "total_months": 60
   },
+  "alpha_sensitivity": [
+    {
+      "alpha": 0.1,
+      "tracking_error": 182.62,
+      "stability": 822.41,
+      "overspend_pct": 24.2
+    },
+    {
+      "alpha": 0.3,
+      "tracking_error": 185.94,
+      "stability": 638.67,
+      "overspend_pct": 24.4
+    },
+    {
+      "alpha": 0.5,
+      "tracking_error": 192.99,
+      "stability": 464.63,
+      "overspend_pct": 23.8
+    },
+    {
+      "alpha": 0.7,
+      "tracking_error": 202.55,
+      "stability": 289.48,
+      "overspend_pct": 24.4
+    },
+    {
+      "alpha": 0.9,
+      "tracking_error": 216.91,
+      "stability": 111.82,
+      "overspend_pct": 26.2
+    }
+  ],
   "_meta": {
     "dataset": "synthetic (5 personas, 36 months each)",
     "simulation_type": "software-in-the-loop",
     "test_year": 2025,
     "model": "GradientBoostingRegressor",
+    "selected_alpha": 0.7,
+    "alpha_justification": "Best accuracy-stability tradeoff (see sensitivity chart)",
     "conclusion_accuracy": "ML Prediction (GB) achieves lowest tracking error",
     "conclusion_stability": "Adaptive Controller achieves smoothest budget transitions"
   }
