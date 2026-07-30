@@ -304,6 +304,14 @@ AI_Finance/
 | `POST` | `/groups` | Create expense group |
 | `POST` | `/loans` | Create loan |
 
+### Using CodeRabbit in this project
+
+1. Install the **CodeRabbit GitHub App** and grant access to this repository.
+2. Enable CodeRabbit for this repository.
+3. Open a pull request. CodeRabbit will automatically review PR changes.
+4. Use the root config file (`.coderabbit.yaml`) to tune behavior such as review profile and excluded paths.
+5. If you need another pass after updates, push new commits or comment `/review` on the PR.
+
 ---
 
 ## License
